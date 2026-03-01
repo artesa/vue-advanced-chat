@@ -53,14 +53,10 @@
 		"types/*"
 	],
 	"devDependencies": {
-		"@semantic-release/changelog": "^6.0.3",
-		"@semantic-release/git": "^10.0.1",
-		"@semantic-release/github": "^9.2.1",
 		"@antfu/eslint-config": "^4.13.2",
 		"@vitejs/plugin-vue": "6.0.4",
 		"eslint": "^9.22.0",
 		"sass": "1.97.3",
-		"semantic-release": "^22.0.5",
 		"typescript": "5.9.3",
 		"vite": "^7.3.1",
 		"vue": "^3.5.29"
