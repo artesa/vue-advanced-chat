@@ -1,22 +1,24 @@
-var isChromium = window.chrome
-var winNav = window.navigator
-var vendorName = winNav.vendor
-var isOpera = typeof window.opr !== 'undefined'
-var isIEedge = winNav.userAgent.indexOf('Edg') > -1
-var isIOSChrome = winNav.userAgent.match('CriOS')
+let isChromium = window.chrome
+let winNav = window.navigator
+let vendorName = winNav.vendor
+let isOpera = typeof window.opr !== 'undefined'
+let isIEedge = winNav.userAgent.includes('Edg')
+let isIOSChrome = winNav.userAgent.match('CriOS')
 
 export function detectChrome() {
 	if (isIOSChrome) {
 		return true
-	} else if (
-		isChromium !== null &&
-		typeof isChromium !== 'undefined' &&
-		vendorName === 'Google Inc.' &&
-		isOpera === false &&
-		isIEedge === false
+	}
+	else if (
+		isChromium !== null
+		&& typeof isChromium !== 'undefined'
+		&& vendorName === 'Google Inc.'
+		&& isOpera === false
+		&& isIEedge === false
 	) {
 		return true
-	} else {
+	}
+	else {
 		return false
 	}
 }

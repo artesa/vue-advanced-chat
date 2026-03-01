@@ -2,16 +2,17 @@ export function roomsValidation(obj) {
 	const roomsValidate = [
 		{ key: 'roomId', type: ['string', 'number'] },
 		{ key: 'roomName', type: ['string'] },
-		{ key: 'users', type: ['array'] }
+		{ key: 'users', type: ['array'] },
 	]
 
 	const validate = (obj, props) => {
-		return props.every(prop => {
+		return props.every((prop) => {
 			let validType = false
 
 			if (prop.type[0] === 'array' && Array.isArray(obj[prop.key])) {
 				validType = true
-			} else if (prop.type.find(t => t === typeof obj[prop.key])) {
+			}
+			else if (prop.type.find(t => t === typeof obj[prop.key])) {
 				validType = true
 			}
 
@@ -21,7 +22,7 @@ export function roomsValidation(obj) {
 
 	if (!validate(obj, roomsValidate)) {
 		throw new Error(
-			'Rooms object is not valid! Must contain at least roomId[String, Number], roomName[String] and users[Array]'
+			'Rooms object is not valid! Must contain at least roomId[String, Number], roomName[String] and users[Array]',
 		)
 	}
 }
@@ -29,11 +30,11 @@ export function roomsValidation(obj) {
 export function partcipantsValidation(obj) {
 	const participantsValidate = [
 		{ key: '_id', type: ['string', 'number'] },
-		{ key: 'username', type: ['string'] }
+		{ key: 'username', type: ['string'] },
 	]
 
 	const validate = (obj, props) => {
-		return props.every(prop => {
+		return props.every((prop) => {
 			const validType = prop.type.find(t => t === typeof obj[prop.key])
 			return validType && checkObjectValid(obj, prop.key)
 		})
@@ -41,7 +42,7 @@ export function partcipantsValidation(obj) {
 
 	if (!validate(obj, participantsValidate)) {
 		throw new Error(
-			'Participants object is not valid! Must contain at least _id[String, Number] and username[String]'
+			'Participants object is not valid! Must contain at least _id[String, Number] and username[String]',
 		)
 	}
 }
@@ -49,11 +50,11 @@ export function partcipantsValidation(obj) {
 export function messagesValidation(obj) {
 	const messagesValidate = [
 		{ key: '_id', type: ['string', 'number'] },
-		{ key: 'senderId', type: ['string', 'number'] }
+		{ key: 'senderId', type: ['string', 'number'] },
 	]
 
 	const validate = (obj, props) => {
-		return props.every(prop => {
+		return props.every((prop) => {
 			const validType = prop.type.find(t => t === typeof obj[prop.key])
 			return validType && checkObjectValid(obj, prop.key)
 		})
@@ -61,15 +62,15 @@ export function messagesValidation(obj) {
 
 	if (!validate(obj, messagesValidate)) {
 		throw new Error(
-			'Messages object is not valid! Must contain at least _id[String, Number] and senderId[String, Number]'
+			'Messages object is not valid! Must contain at least _id[String, Number] and senderId[String, Number]',
 		)
 	}
 }
 
 function checkObjectValid(obj, key) {
 	return (
-		Object.prototype.hasOwnProperty.call(obj, key) &&
-		obj[key] !== null &&
-		obj[key] !== undefined
+		Object.prototype.hasOwnProperty.call(obj, key)
+		&& obj[key] !== null
+		&& obj[key] !== undefined
 	)
 }

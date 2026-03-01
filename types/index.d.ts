@@ -1,4 +1,4 @@
-import Vue, { PluginFunction } from 'vue'
+import type { DefineComponent } from 'vue'
 
 export function register(): void
 
@@ -71,7 +71,7 @@ export interface Message {
 	distributed?: boolean
 	seen?: boolean
 	deleted?: boolean
-  edited?: boolean
+	edited?: boolean
 	failure?: boolean
 	disableActions?: boolean
 	disableReactions?: boolean
@@ -100,7 +100,11 @@ export interface TextFormatting {
 	multilineCode?: string
 	inlineCode?: string
 }
-export type TemplateText = { tag: string; text: string }
+
+export interface TemplateText {
+	tag: string
+	text: string
+}
 
 export interface AutoScroll {
 	send?: {
@@ -119,70 +123,86 @@ export interface UsernameOptions {
 }
 
 export interface LinkOptions {
-	disabled?: string
+	disabled?: boolean
 	target?: string
-	rel?: boolean
+	rel?: string | null
 }
 
 export interface Props {
 	height?: string
-	'current-user-id': string
-	rooms: Room[]
-	'rooms-order'?: 'desc' | 'asc'
-	'loading-rooms'?: boolean
-	'rooms-loaded'?: boolean
-	'room-id'?: string
-	'load-first-room'?: boolean
-	'rooms-list-opened'?: boolean
-	messages: Message[]
-	'room-message'?: string
-	'username-options'?: UsernameOptions
-	'messages-loaded'?: boolean
-	'room-actions'?: CustomAction[]
-	'menu-actions'?: CustomAction[]
-	'message-actions'?: MessageActions
-	'message-selection-actions'?: CustomAction[]
-	'templates-text'?: TemplatesText
-	'auto-scroll'?: AutoScroll
-	'show-search'?: boolean
-	'show-add-room'?: boolean
-	'show-send-icon'?: boolean
-	'show-files'?: boolean
-	'show-audio'?: boolean
-	'audio-bit-rate'?: number
-	'audio-sample-rate'?: number
-	'show-emojis'?: boolean
-	'show-reaction-emojis'?: boolean
-	'show-new-messages-divider'?: boolean
-	'show-footer'?: boolean
-	'text-messages'?: Record<string, StringNumber>
-	'text-formatting'?: TextFormatting
-	'link-options'?: LinkOptions
-	'room-info-enabled': boolean
-	'textarea-action-enabled'?: boolean
-	'textarea-auto-focus'?: boolean
-	'user-tags-enabled'?: boolean
-	'emojis-suggestion-enabled'?: boolean
-	'media-preview-enabled'?: boolean
-	'responsive-breakpoint'?: number
-	'single-room'?: boolean
-	'scroll-distance'?: number
 	theme?: 'light' | 'dark'
-	'accepted-files'?: string
-	'capture-files'?: string
-	'multiple-files'?: boolean
 	styles?: Record<string, Record<string, string>>
+	responsiveBreakpoint?: number
+	singleRoom?: boolean
+	roomsListOpened?: boolean
+	textMessages?: Record<string, StringNumber>
+	currentUserId?: string
+	rooms?: Room[]
+	roomsOrder?: 'desc' | 'asc'
+	loadingRooms?: boolean
+	roomsLoaded?: boolean
+	roomId?: string | null
+	loadFirstRoom?: boolean
+	messages?: Message[]
+	messagesLoaded?: boolean
+	roomActions?: CustomAction[]
+	menuActions?: CustomAction[]
+	messageActions?: MessageAction[]
+	messageSelectionActions?: CustomAction[]
+	autoScroll?: AutoScroll
+	customSearchRoomEnabled?: boolean
+	showSearch?: boolean
+	showAddRoom?: boolean
+	showSendIcon?: boolean
+	showFiles?: boolean
+	showAudio?: boolean
+	audioBitRate?: number
+	audioSampleRate?: number
+	showEmojis?: boolean
+	showReactionEmojis?: boolean
+	showNewMessagesDivider?: boolean
+	showFooter?: boolean
+	showRoomHeader?: boolean
+	textFormatting?: TextFormatting
+	linkOptions?: LinkOptions
+	roomInfoEnabled?: boolean
+	textareaActionEnabled?: boolean
+	textareaAutoFocus?: boolean
+	userTagsEnabled?: boolean
+	emojisSuggestionEnabled?: boolean
+	roomMessage?: string
+	scrollDistance?: number
+	acceptedFiles?: string
+	captureFiles?: string
+	multipleFiles?: boolean
+	templatesText?: TemplateText[]
+	mediaPreviewEnabled?: boolean
+	usernameOptions?: UsernameOptions
+	emojiDataSource?: string
+	handleCustomOpenFiles?: boolean
+	showMessagesStarted?: boolean
 }
 
-export interface AdvancedChatOptions {
-	props: Props
+export type Events = {
+	'toggle-rooms-list': { opened: boolean }
+	'room-info': { room: Room }
+	'fetch-messages': { room: Room; options?: { reset?: boolean } }
+	'send-message': { content: string; roomId: string; files?: MessageFile[]; replyMessage?: Message }
+	'edit-message': { messageId: string; newContent: string; roomId: string; files?: MessageFile[] }
+	'delete-message': { message: Message }
+	'open-file': { message: Message; file: MessageFile }
+	'open-user-tag': { user: RoomUser }
+	'open-failed-message': { message: Message }
+	'menu-action-handler': { action: CustomAction; roomId: string }
+	'message-action-handler': { action: MessageAction; message: Message }
+	'send-message-reaction': { reaction: { unicode: string; reaction: MessageReactions }; messageId: string; roomId: string }
+	'typing-message': { message: string; roomId: string }
+	'textarea-action-handler': { message: Message; roomId: string }
+	'fetch-more-rooms': void
+	'add-room': void
+	'search-room': { value: string }
+	'room-action-handler': { action: CustomAction; roomId: string }
+	'message-selection-action-handler': { action: CustomAction; messages: Message[] }
 }
 
-export class VueAdvancedChat extends Vue {
-	rooms: Room[]
-	messages: Message[]
-
-	$props: Props
-
-	static install: PluginFunction<AdvancedChatOptions>
-}
+export declare const VueAdvancedChat: DefineComponent<Props>

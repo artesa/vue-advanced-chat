@@ -1,7 +1,8 @@
-import { IMAGE_TYPES, VIDEO_TYPES, AUDIO_TYPES } from './constants'
+import { AUDIO_TYPES, IMAGE_TYPES, VIDEO_TYPES } from './constants'
 
 function checkMediaType(types, file) {
-	if (!file || !file.type) return
+	if (!file || !file.type)
+		return
 	return types.some(t => file.type.toLowerCase().includes(t))
 }
 

@@ -1,3 +1,22 @@
+<script>
+export default {
+	name: 'MessageReactions',
+
+	props: {
+		currentUserId: { type: [String, Number], required: true },
+		message: { type: Object, required: true },
+	},
+
+	emits: ['send-message-reaction'],
+
+	methods: {
+		sendMessageReaction(emoji, reaction) {
+			this.$emit('send-message-reaction', { emoji, reaction })
+		},
+	},
+}
+</script>
+
 <template>
 	<transition-group v-if="!message.deleted" name="vac-slide-left" tag="span">
 		<button
@@ -6,10 +25,10 @@
 			:key="key + 0"
 			class="vac-button-reaction"
 			:class="{
-				'vac-reaction-me': reaction.indexOf(currentUserId) !== -1
+				'vac-reaction-me': reaction.includes(currentUserId),
 			}"
 			:style="{
-				float: message.senderId === currentUserId ? 'right' : 'left'
+				float: message.senderId === currentUserId ? 'right' : 'left',
 			}"
 			@click="sendMessageReaction({ unicode: key }, reaction)"
 		>
@@ -17,22 +36,3 @@
 		</button>
 	</transition-group>
 </template>
-
-<script>
-export default {
-	name: 'MessageReactions',
-
-	props: {
-		currentUserId: { type: [String, Number], required: true },
-		message: { type: Object, required: true }
-	},
-
-	emits: ['send-message-reaction'],
-
-	methods: {
-		sendMessageReaction(emoji, reaction) {
-			this.$emit('send-message-reaction', { emoji, reaction })
-		}
-	}
-}
-</script>

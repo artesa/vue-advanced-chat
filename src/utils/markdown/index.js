@@ -17,17 +17,17 @@ export default (text, { textFormatting }) => {
 				extensions: [
 					{
 						...gfm(),
-						disable: { null: gfmDisabled }
+						disable: { null: gfmDisabled },
 					},
 					underline,
-					usertag
+					usertag,
 				],
 				htmlExtensions: [
 					gfmHtml(),
 					underlineHtml,
-					usertagHtml(textFormatting.users)
-				]
-			}
+					usertagHtml(textFormatting.users),
+				],
+			},
 		)
 
 		if (textFormatting.singleLine) {
@@ -38,23 +38,23 @@ export default (text, { textFormatting }) => {
 			return [
 				{
 					types: [],
-					value: element.innerText
-				}
+					value: element.innerText,
+				},
 			]
 		}
 
 		return [
 			{
 				types: ['markdown'],
-				value: markdown
-			}
+				value: markdown,
+			},
 		]
 	}
 
 	return [
 		{
 			types: [],
-			value: text
-		}
+			value: text,
+		},
 	]
 }

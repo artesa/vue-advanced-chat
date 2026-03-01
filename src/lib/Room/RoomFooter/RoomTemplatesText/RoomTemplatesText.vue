@@ -1,3 +1,51 @@
+<script>
+export default {
+	name: 'RoomTemplatesText',
+
+	props: {
+		filteredTemplatesText: { type: Array, required: true },
+		selectItem: { type: Boolean, default: null },
+		activeUpOrDown: { type: Number, default: null },
+	},
+
+	emits: ['select-template-text', 'activate-item'],
+
+	data() {
+		return {
+			activeItem: null,
+		}
+	},
+
+	watch: {
+		filteredTemplatesText(val, oldVal) {
+			if (!oldVal.length || val.length !== oldVal.length) {
+				this.activeItem = 0
+			}
+		},
+		selectItem(val) {
+			if (val) {
+				this.$emit(
+					'select-template-text',
+					this.filteredTemplatesText[this.activeItem],
+				)
+			}
+		},
+		activeUpOrDown() {
+			if (
+				this.activeUpOrDown > 0
+				&& this.activeItem < this.filteredTemplatesText.length - 1
+			) {
+				this.activeItem++
+			}
+			else if (this.activeUpOrDown < 0 && this.activeItem > 0) {
+				this.activeItem--
+			}
+			this.$emit('activate-item')
+		},
+	},
+}
+</script>
+
 <template>
 	<transition name="vac-slide-up">
 		<div
@@ -24,50 +72,3 @@
 		</div>
 	</transition>
 </template>
-
-<script>
-export default {
-	name: 'RoomTemplatesText',
-
-	props: {
-		filteredTemplatesText: { type: Array, required: true },
-		selectItem: { type: Boolean, default: null },
-		activeUpOrDown: { type: Number, default: null }
-	},
-
-	emits: ['select-template-text', 'activate-item'],
-
-	data() {
-		return {
-			activeItem: null
-		}
-	},
-
-	watch: {
-		filteredTemplatesText(val, oldVal) {
-			if (!oldVal.length || val.length !== oldVal.length) {
-				this.activeItem = 0
-			}
-		},
-		selectItem(val) {
-			if (val) {
-				this.$emit(
-					'select-template-text',
-					this.filteredTemplatesText[this.activeItem]
-				)
-			}
-		},
-		activeUpOrDown() {
-			if (
-				this.activeUpOrDown > 0 &&
-				this.activeItem < this.filteredTemplatesText.length - 1
-			) {
-				this.activeItem++
-			} else if (this.activeUpOrDown < 0 && this.activeItem > 0) {
-				this.activeItem--
-			}
-			this.$emit('activate-item')
-		}
-	}
-}
-</script>

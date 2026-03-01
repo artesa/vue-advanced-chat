@@ -1,12 +1,12 @@
 import { codes } from './constants'
 
-const underlineTokenize = (effects, ok, nok) => {
-	const inside = code => {
+function underlineTokenize(effects, ok, nok) {
+	const inside = (code) => {
 		if (
-			code === codes.carriageReturn ||
-			code === codes.lineFeed ||
-			code === codes.carriageReturnLineFeed ||
-			code === codes.eof
+			code === codes.carriageReturn
+			|| code === codes.lineFeed
+			|| code === codes.carriageReturnLineFeed
+			|| code === codes.eof
 		) {
 			return nok(code)
 		}
@@ -32,7 +32,7 @@ const underlineTokenize = (effects, ok, nok) => {
 		return inside
 	}
 
-	const insideEscape = code => {
+	const insideEscape = (code) => {
 		if (code === codes.backslash || code === codes.degree) {
 			effects.consume(code)
 
@@ -44,7 +44,7 @@ const underlineTokenize = (effects, ok, nok) => {
 
 	const begin = code => (code === codes.degree ? nok(code) : inside(code))
 
-	return code => {
+	return (code) => {
 		effects.enter('underline')
 		effects.enter('underlineMarker')
 		effects.consume(code)
@@ -63,11 +63,11 @@ export const underlineHtml = {
 	enter: {
 		underline() {
 			this.tag('<u>')
-		}
+		},
 	},
 	exit: {
 		underline() {
 			this.tag('</u>')
-		}
-	}
+		},
+	},
 }

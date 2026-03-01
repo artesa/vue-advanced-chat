@@ -157,5 +157,5 @@ export const codes = {
 	// Unicode Specials block.
 	byteOrderMarker: 65279,
 	// Unicode Specials block.
-	replacementCharacter: 65533 // `�`
+	replacementCharacter: 65533, // `�`
 }

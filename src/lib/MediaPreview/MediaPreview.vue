@@ -1,3 +1,41 @@
+<script>
+import SvgIcon from '../../components/SvgIcon/SvgIcon'
+
+import { isImageFile, isVideoFile } from '../../utils/media-file'
+
+export default {
+	name: 'MediaPreview',
+	components: {
+		SvgIcon,
+	},
+
+	props: {
+		file: { type: Object, required: true },
+	},
+
+	emits: ['close-media-preview'],
+
+	computed: {
+		isImage() {
+			return isImageFile(this.file)
+		},
+		isVideo() {
+			return isVideoFile(this.file)
+		},
+	},
+
+	mounted() {
+		this.$refs.modal.focus()
+	},
+
+	methods: {
+		closeModal() {
+			this.$emit('close-media-preview')
+		},
+	},
+}
+</script>
+
 <template>
 	<div
 		ref="modal"
@@ -11,59 +49,22 @@
 				<div
 					class="vac-image-preview"
 					:style="{
-						'background-image': `url('${file.url}')`
+						'background-image': `url('${file.url}')`,
 					}"
 				/>
 			</div>
 
 			<div v-else-if="isVideo" class="vac-media-preview-container">
 				<video controls autoplay>
-					<source :src="file.url" />
+					<source :src="file.url">
 				</video>
 			</div>
 		</transition>
 
 		<div class="vac-svg-button">
 			<slot name="preview-close-icon">
-				<svg-icon name="close-outline" param="preview" />
+				<SvgIcon name="close-outline" param="preview" />
 			</slot>
 		</div>
 	</div>
 </template>
-<script>
-import SvgIcon from '../../components/SvgIcon/SvgIcon'
-
-import { isImageFile, isVideoFile } from '../../utils/media-file'
-
-export default {
-	name: 'MediaPreview',
-	components: {
-		SvgIcon
-	},
-
-	props: {
-		file: { type: Object, required: true }
-	},
-
-	emits: ['close-media-preview'],
-
-	computed: {
-		isImage() {
-			return isImageFile(this.file)
-		},
-		isVideo() {
-			return isVideoFile(this.file)
-		}
-	},
-
-	mounted() {
-		this.$refs.modal.focus()
-	},
-
-	methods: {
-		closeModal() {
-			this.$emit('close-media-preview')
-		}
-	}
-}
-</script>

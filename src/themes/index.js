@@ -10,14 +10,14 @@ export const defaultThemeStyles = {
 			colorCaret: '#1976d2',
 			colorSpinner: '#333',
 			borderStyle: '1px solid #e1e4e8',
-			backgroundScrollIcon: '#fff'
+			backgroundScrollIcon: '#fff',
 		},
 
 		container: {
 			border: 'none',
 			borderRadius: '4px',
 			boxShadow:
-				'0px 1px 2px 0px rgba(0, 0, 0, 0.14), 0px 1px 5px 0px rgba(0, 0, 0, 0.12)'
+				'0px 1px 2px 0px rgba(0, 0, 0, 0.14), 0px 1px 5px 0px rgba(0, 0, 0, 0.12)',
 		},
 
 		header: {
@@ -25,7 +25,7 @@ export const defaultThemeStyles = {
 			colorRoomName: '#0a0a0a',
 			colorRoomInfo: '#9ca6af',
 			position: 'absolute',
-			width: '100%'
+			width: '100%',
 		},
 
 		footer: {
@@ -34,11 +34,11 @@ export const defaultThemeStyles = {
 			borderInputSelected: '#1976d2',
 			backgroundReply: '#e5e5e6',
 			backgroundTagActive: '#e5e5e6',
-			backgroundTag: '#f8f9fa'
+			backgroundTag: '#f8f9fa',
 		},
 
 		content: {
-			background: '#f8f9fa'
+			background: '#f8f9fa',
 		},
 
 		sidemenu: {
@@ -46,12 +46,12 @@ export const defaultThemeStyles = {
 			backgroundHover: '#f6f6f6',
 			backgroundActive: '#e5effa',
 			colorActive: '#1976d2',
-			borderColorSearch: '#e1e5e8'
+			borderColorSearch: '#e1e5e8',
 		},
 
 		dropdown: {
 			background: '#fff',
-			backgroundHover: '#f6f6f6'
+			backgroundHover: '#f6f6f6',
 		},
 
 		message: {
@@ -91,14 +91,14 @@ export const defaultThemeStyles = {
 			backgroundAudioLine: 'rgba(0, 0, 0, 0.15)',
 			backgroundAudioProgress: '#455247',
 			backgroundAudioProgressSelector: '#455247',
-			colorFileExtension: '#757e85'
+			colorFileExtension: '#757e85',
 		},
 
 		markdown: {
 			background: 'rgba(239, 239, 239, 0.7)',
 			border: 'rgba(212, 212, 212, 0.9)',
 			color: '#e01e5a',
-			colorMulti: '#0a0a0a'
+			colorMulti: '#0a0a0a',
 		},
 
 		room: {
@@ -108,11 +108,11 @@ export const defaultThemeStyles = {
 			colorStateOnline: '#4caf50',
 			colorStateOffline: '#9ca6af',
 			backgroundCounterBadge: '#0696c7',
-			colorCounterBadge: '#fff'
+			colorCounterBadge: '#fff',
 		},
 
 		emoji: {
-			background: '#fff'
+			background: '#fff',
 		},
 
 		icons: {
@@ -143,8 +143,8 @@ export const defaultThemeStyles = {
 			audioPlay: '#455247',
 			audioPause: '#455247',
 			audioCancel: '#eb4034',
-			audioConfirm: '#1ba65b'
-		}
+			audioConfirm: '#1ba65b',
+		},
 	},
 	dark: {
 		general: {
@@ -157,14 +157,14 @@ export const defaultThemeStyles = {
 			colorCaret: '#fff',
 			colorSpinner: '#fff',
 			borderStyle: 'none',
-			backgroundScrollIcon: '#fff'
+			backgroundScrollIcon: '#fff',
 		},
 
 		container: {
 			border: 'none',
 			borderRadius: '4px',
 			boxShadow:
-				'0px 1px 2px 0px rgba(0, 0, 0, 0.14), 0px 1px 5px 0px rgba(0, 0, 0, 0.12)'
+				'0px 1px 2px 0px rgba(0, 0, 0, 0.14), 0px 1px 5px 0px rgba(0, 0, 0, 0.12)',
 		},
 
 		header: {
@@ -172,7 +172,7 @@ export const defaultThemeStyles = {
 			colorRoomName: '#fff',
 			colorRoomInfo: '#9ca6af',
 			position: 'absolute',
-			width: '100%'
+			width: '100%',
 		},
 
 		footer: {
@@ -181,11 +181,11 @@ export const defaultThemeStyles = {
 			borderInputSelected: '#1976d2',
 			backgroundReply: '#1b1c1c',
 			backgroundTagActive: '#1b1c1c',
-			backgroundTag: '#131415'
+			backgroundTag: '#131415',
 		},
 
 		content: {
-			background: '#131415'
+			background: '#131415',
 		},
 
 		sidemenu: {
@@ -193,12 +193,12 @@ export const defaultThemeStyles = {
 			backgroundHover: '#202224',
 			backgroundActive: '#151617',
 			colorActive: '#fff',
-			borderColorSearch: '#181a1b'
+			borderColorSearch: '#181a1b',
 		},
 
 		dropdown: {
 			background: '#2a2c33',
-			backgroundHover: '#26282e'
+			backgroundHover: '#26282e',
 		},
 
 		message: {
@@ -238,14 +238,14 @@ export const defaultThemeStyles = {
 			backgroundAudioLine: 'rgba(255, 255, 255, 0.15)',
 			backgroundAudioProgress: '#b7d4d3',
 			backgroundAudioProgressSelector: '#b7d4d3',
-			colorFileExtension: '#a2a5a8'
+			colorFileExtension: '#a2a5a8',
 		},
 
 		markdown: {
 			background: 'rgba(239, 239, 239, 0.7)',
 			border: 'rgba(212, 212, 212, 0.9)',
 			color: '#e01e5a',
-			colorMulti: '#0a0a0a'
+			colorMulti: '#0a0a0a',
 		},
 
 		room: {
@@ -255,11 +255,11 @@ export const defaultThemeStyles = {
 			colorStateOnline: '#4caf50',
 			colorStateOffline: '#596269',
 			backgroundCounterBadge: '#1976d2',
-			colorCounterBadge: '#fff'
+			colorCounterBadge: '#fff',
 		},
 
 		emoji: {
-			background: '#343740'
+			background: '#343740',
 		},
 
 		icons: {
@@ -290,12 +290,12 @@ export const defaultThemeStyles = {
 			audioPlay: '#b7d4d3',
 			audioPause: '#b7d4d3',
 			audioCancel: '#eb4034',
-			audioConfirm: '#1ba65b'
-		}
-	}
+			audioConfirm: '#1ba65b',
+		},
+	},
 }
 
-export const cssThemeVars = ({
+export function cssThemeVars({
 	general,
 	container,
 	header,
@@ -307,8 +307,8 @@ export const cssThemeVars = ({
 	markdown,
 	room,
 	emoji,
-	icons
-}) => {
+	icons,
+}) {
 	return {
 		// general
 		'--chat-color': general.color,
@@ -445,6 +445,6 @@ export const cssThemeVars = ({
 		'--chat-icon-color-audio-play': icons.audioPlay,
 		'--chat-icon-color-audio-pause': icons.audioPause,
 		'--chat-icon-color-audio-cancel': icons.audioCancel,
-		'--chat-icon-color-audio-confirm': icons.audioConfirm
+		'--chat-icon-color-audio-confirm': icons.audioConfirm,
 	}
 }

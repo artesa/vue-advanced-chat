@@ -11,7 +11,7 @@ export default class {
 
 		this.encoderOptions = {
 			bitRate: options.bitRate,
-			sampleRate: options.sampleRate
+			sampleRate: options.sampleRate,
 		}
 
 		this.bufferSize = 4096
@@ -31,8 +31,8 @@ export default class {
 			video: false,
 			audio: {
 				channelCount: 1,
-				echoCancellation: false
-			}
+				echoCancellation: false,
+			},
 		}
 
 		this.beforeRecording && this.beforeRecording('start recording')
@@ -91,7 +91,8 @@ export default class {
 		if (sampleRate !== this.encoderOptions.sampleRate) {
 			this.encoderOptions.sampleRate = stream
 				.getAudioTracks()[0]
-				.getSettings().sampleRate
+				.getSettings()
+				.sampleRate
 
 			this.lameEncoder = new Mp3Encoder(this.encoderOptions)
 		}
@@ -100,7 +101,7 @@ export default class {
 			this.lameEncoder = new Mp3Encoder(this.encoderOptions)
 		}
 
-		this.processor.onaudioprocess = ev => {
+		this.processor.onaudioprocess = (ev) => {
 			const sample = ev.inputBuffer.getChannelData(0)
 			let sum = 0.0
 
@@ -112,9 +113,9 @@ export default class {
 				sum += sample[i] * sample[i]
 			}
 
-			this.duration =
-				parseFloat(this._duration) +
-				parseFloat(this.context.currentTime.toFixed(2))
+			this.duration
+				= Number.parseFloat(this._duration)
+					+ Number.parseFloat(this.context.currentTime.toFixed(2))
 			this.volume = Math.sqrt(sum / sample.length).toFixed(2)
 		}
 

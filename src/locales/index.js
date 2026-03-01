@@ -10,5 +10,5 @@ export default {
 	IS_ONLINE: 'is online',
 	LAST_SEEN: 'last seen ',
 	IS_TYPING: 'is writing...',
-	CANCEL_SELECT_MESSAGE: 'Cancel'
+	CANCEL_SELECT_MESSAGE: 'Cancel',
 }

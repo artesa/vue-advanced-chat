@@ -1,38 +1,38 @@
-@import 'animation';
-@import 'menu';
-@import 'helper';
-@import 'markdown';
+@use 'animation';
+@use 'menu';
+@use 'helper';
+@use 'markdown';
 
-@import '../lib/ChatWindow';
+@use '../lib/ChatWindow';
 
-@import '../lib/MediaPreview/MediaPreview';
+@use '../lib/MediaPreview/MediaPreview';
 
-@import '../lib/Room/Room';
-@import '../lib/Room/RoomHeader/RoomHeader';
+@use '../lib/Room/Room';
+@use '../lib/Room/RoomHeader/RoomHeader';
 
-@import '../lib/Room/RoomFooter/RoomFooter';
-@import '../lib/Room/RoomFooter/RoomEmojis/RoomEmojis';
-@import '../lib/Room/RoomFooter/RoomMessageReply/RoomMessageReply';
-@import '../lib/Room/RoomFooter/RoomFiles/RoomFiles';
-@import '../lib/Room/RoomFooter/RoomFiles/RoomFile/RoomFile';
-@import '../lib/Room/RoomFooter/RoomUsersTag/RoomUsersTag';
-@import '../lib/Room/RoomFooter/RoomTemplatesText/RoomTemplatesText';
+@use '../lib/Room/RoomFooter/RoomFooter';
+@use '../lib/Room/RoomFooter/RoomEmojis/RoomEmojis';
+@use '../lib/Room/RoomFooter/RoomMessageReply/RoomMessageReply';
+@use '../lib/Room/RoomFooter/RoomFiles/RoomFiles';
+@use '../lib/Room/RoomFooter/RoomFiles/RoomFile/RoomFile';
+@use '../lib/Room/RoomFooter/RoomUsersTag/RoomUsersTag';
+@use '../lib/Room/RoomFooter/RoomTemplatesText/RoomTemplatesText';
 
-@import '../lib/RoomsList/RoomsList';
-@import '../lib/RoomsList/RoomContent/RoomContent';
-@import '../lib/RoomsList/RoomsSearch/RoomsSearch';
+@use '../lib/RoomsList/RoomsList';
+@use '../lib/RoomsList/RoomContent/RoomContent';
+@use '../lib/RoomsList/RoomsSearch/RoomsSearch';
 
-@import '../lib/Room/RoomMessage/RoomMessage';
-@import '../lib/Room/RoomMessage/AudioPlayer/AudioPlayer';
-@import '../lib/Room/RoomMessage/AudioPlayer/AudioControl/AudioControl';
-@import '../lib/Room/RoomMessage/MessageActions/MessageActions';
-@import '../lib/Room/RoomMessage/MessageFiles/MessageFiles';
-@import '../lib/Room/RoomMessage/MessageFiles/MessageFile/MessageFile';
-@import '../lib/Room/RoomMessage/MessageReactions/MessageReactions';
-@import '../lib/Room/RoomMessage/MessageReply/MessageReply';
+@use '../lib/Room/RoomMessage/RoomMessage';
+@use '../lib/Room/RoomMessage/AudioPlayer/AudioPlayer';
+@use '../lib/Room/RoomMessage/AudioPlayer/AudioControl/AudioControl';
+@use '../lib/Room/RoomMessage/MessageActions/MessageActions';
+@use '../lib/Room/RoomMessage/MessageFiles/MessageFiles';
+@use '../lib/Room/RoomMessage/MessageFiles/MessageFile/MessageFile';
+@use '../lib/Room/RoomMessage/MessageReactions/MessageReactions';
+@use '../lib/Room/RoomMessage/MessageReply/MessageReply';
 
-@import '../components/EmojiPickerContainer/EmojiPickerContainer';
-@import '../components/FormatMessage/FormatMessage';
-@import '../components/Loader/Loader';
-@import '../components/SvgIcon/SvgIcon';
-@import '../components/ProgressBar/ProgressBar';
+@use '../components/EmojiPickerContainer/EmojiPickerContainer';
+@use '../components/FormatMessage/FormatMessage';
+@use '../components/Loader/Loader';
+@use '../components/SvgIcon/SvgIcon';
+@use '../components/ProgressBar/ProgressBar';

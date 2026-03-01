@@ -1,130 +1,21 @@
-<template>
-	<div class="vac-card-window" :style="[{ height }, cssVars]">
-		<div class="vac-chat-container">
-			<rooms-list
-				v-if="!singleRoomCasted"
-				:current-user-id="currentUserId"
-				:rooms="orderedRooms"
-				:loading-rooms="loadingRoomsCasted"
-				:rooms-loaded="roomsLoadedCasted"
-				:room="room"
-				:room-actions="roomActionsCasted"
-				:custom-search-room-enabled="customSearchRoomEnabled"
-				:text-messages="t"
-				:show-search="showSearchCasted"
-				:show-add-room="showAddRoomCasted"
-				:show-rooms-list="showRoomsList && roomsListOpenedCasted"
-				:text-formatting="textFormattingCasted"
-				:link-options="linkOptionsCasted"
-				:is-mobile="isMobile"
-				:scroll-distance="scrollDistance"
-				@fetch-room="fetchRoom"
-				@fetch-more-rooms="fetchMoreRooms"
-				@loading-more-rooms="loadingMoreRooms = $event"
-				@add-room="addRoom"
-				@search-room="searchRoom"
-				@room-action-handler="roomActionHandler"
-			>
-				<template v-for="el in slots" #[el.slot]="data">
-					<slot :name="el.slot" v-bind="data" />
-				</template>
-			</rooms-list>
-
-			<room
-				:current-user-id="currentUserId"
-				:rooms="roomsCasted"
-				:room-id="room.roomId || ''"
-				:load-first-room="loadFirstRoomCasted"
-				:messages="messagesCasted"
-				:room-message="roomMessage"
-				:messages-loaded="messagesLoadedCasted"
-				:menu-actions="menuActionsCasted"
-				:message-actions="messageActionsCasted"
-				:message-selection-actions="messageSelectionActionsCasted"
-				:auto-scroll="autoScrollCasted"
-				:show-send-icon="showSendIconCasted"
-				:show-files="showFilesCasted"
-				:show-audio="showAudioCasted"
-				:audio-bit-rate="audioBitRate"
-				:audio-sample-rate="audioSampleRate"
-				:show-emojis="showEmojisCasted"
-				:show-reaction-emojis="showReactionEmojisCasted"
-				:show-new-messages-divider="showNewMessagesDividerCasted"
-				:show-footer="showFooterCasted"
-				:show-room-header="showRoomHeader"
-				:text-messages="t"
-				:single-room="singleRoomCasted"
-				:show-rooms-list="showRoomsList && roomsListOpenedCasted"
-				:text-formatting="textFormattingCasted"
-				:link-options="linkOptionsCasted"
-				:is-mobile="isMobile"
-				:loading-rooms="loadingRoomsCasted"
-				:room-info-enabled="roomInfoEnabledCasted"
-				:textarea-action-enabled="textareaActionEnabledCasted"
-				:textarea-auto-focus="textareaAutoFocusCasted"
-				:user-tags-enabled="userTagsEnabledCasted"
-				:emojis-suggestion-enabled="emojisSuggestionEnabledCasted"
-				:scroll-distance="scrollDistance"
-				:accepted-files="acceptedFiles"
-				:capture-files="captureFiles"
-				:multiple-files="multipleFilesCasted"
-				:templates-text="templatesTextCasted"
-				:username-options="usernameOptionsCasted"
-				:emoji-data-source="emojiDataSource"
-				:show-messages-started-text="showMessagesStarted"
-				@toggle-rooms-list="toggleRoomsList"
-				@room-info="roomInfo"
-				@fetch-messages="fetchMessages"
-				@send-message="sendMessage"
-				@edit-message="editMessage"
-				@delete-message="deleteMessage"
-				@open-file="openFile"
-				@open-user-tag="openUserTag"
-				@open-failed-message="openFailedMessage"
-				@menu-action-handler="menuActionHandler"
-				@message-action-handler="messageActionHandler"
-				@message-selection-action-handler="messageSelectionActionHandler"
-				@send-message-reaction="sendMessageReaction"
-				@typing-message="typingMessage"
-				@textarea-action-handler="textareaActionHandler"
-			>
-				<template v-for="el in slots" #[el.slot]="data">
-					<slot :name="el.slot" v-bind="data" />
-				</template>
-			</room>
-		</div>
-		<transition name="vac-fade-preview" appear>
-			<media-preview
-				v-if="showMediaPreview"
-				:file="previewFile"
-				@close-media-preview="showMediaPreview = false"
-			>
-				<template v-for="el in slots" #[el.slot]="data">
-					<slot :name="el.slot" v-bind="data" />
-				</template>
-			</media-preview>
-		</transition>
-	</div>
-</template>
-
 <script>
-import RoomsList from './RoomsList/RoomsList'
-import Room from './Room/Room'
-import MediaPreview from './MediaPreview/MediaPreview'
-
 import locales from '../locales'
-import { defaultThemeStyles, cssThemeVars } from '../themes'
+import { cssThemeVars, defaultThemeStyles } from '../themes'
 import {
+	partcipantsValidation,
 	roomsValidation,
-	partcipantsValidation
 } from '../utils/data-validation'
+
+import MediaPreview from './MediaPreview/MediaPreview'
+import Room from './Room/Room'
+import RoomsList from './RoomsList/RoomsList'
 
 export default {
 	name: 'ChatContainer',
 	components: {
 		RoomsList,
 		Room,
-		MediaPreview
+		MediaPreview,
 	},
 
 	props: {
@@ -152,8 +43,8 @@ export default {
 				{ name: 'replyMessage', title: 'Reply' },
 				{ name: 'editMessage', title: 'Edit Message', onlyMe: true },
 				{ name: 'deleteMessage', title: 'Delete Message', onlyMe: true },
-				{ name: 'selectMessages', title: 'Select' }
-			]
+				{ name: 'selectMessages', title: 'Select' },
+			],
 		},
 		messageSelectionActions: { type: [Array, String], default: () => [] },
 		autoScroll: {
@@ -162,14 +53,14 @@ export default {
 				return {
 					send: {
 						new: true,
-						newAfterScrollUp: true
+						newAfterScrollUp: true,
 					},
 					receive: {
 						new: true,
-						newAfterScrollUp: false
-					}
+						newAfterScrollUp: false,
+					},
 				}
-			}
+			},
 		},
 		customSearchRoomEnabled: { type: [Boolean, String], default: false },
 		showSearch: { type: [Boolean, String], default: true },
@@ -187,12 +78,12 @@ export default {
 		textFormatting: {
 			type: [Object, String],
 			default: () => ({
-				disabled: false
-			})
+				disabled: false,
+			}),
 		},
 		linkOptions: {
 			type: [Object, String],
-			default: () => ({ disabled: false, target: '_blank', rel: null })
+			default: () => ({ disabled: false, target: '_blank', rel: null }),
 		},
 		roomInfoEnabled: { type: [Boolean, String], default: false },
 		textareaActionEnabled: { type: [Boolean, String], default: false },
@@ -208,11 +99,11 @@ export default {
 		mediaPreviewEnabled: { type: [Boolean, String], default: true },
 		usernameOptions: {
 			type: [Object, String],
-			default: () => ({ minUsers: 3, currentUser: false })
+			default: () => ({ minUsers: 3, currentUser: false }),
 		},
 		emojiDataSource: { type: String, default: undefined },
 		handleCustomOpenFiles: { type: Boolean, default: false },
-		showMessagesStarted: { type: Boolean, default: true }
+		showMessagesStarted: { type: Boolean, default: true },
 	},
 
 	emits: [
@@ -234,7 +125,7 @@ export default {
 		'add-room',
 		'search-room',
 		'room-action-handler',
-		'message-selection-action-handler'
+		'message-selection-action-handler',
 	],
 
 	data() {
@@ -245,7 +136,7 @@ export default {
 			showRoomsList: true,
 			isMobile: false,
 			showMediaPreview: false,
-			previewFile: {}
+			previewFile: {},
 		}
 	},
 
@@ -253,17 +144,17 @@ export default {
 		t() {
 			return {
 				...locales,
-				...this.textMessagesCasted
+				...this.textMessagesCasted,
 			}
 		},
 		cssVars() {
 			const defaultStyles = defaultThemeStyles[this.theme]
 			const customStyles = {}
 
-			Object.keys(defaultStyles).map(key => {
+			Object.keys(defaultStyles).map((key) => {
 				customStyles[key] = {
 					...defaultStyles[key],
-					...(this.stylesCasted[key] || {})
+					...(this.stylesCasted[key] || {}),
 				}
 			})
 
@@ -388,7 +279,7 @@ export default {
 		},
 		handleCustomOpenFilesCasted() {
 			return this.castBoolean(this.handleCustomOpenFiles)
-		}
+		},
 	},
 
 	watch: {
@@ -397,32 +288,35 @@ export default {
 			deep: true,
 			handler(newVal, oldVal) {
 				if (
-					!newVal[0] ||
-					!newVal.find(room => room.roomId === this.room.roomId)
+					!newVal[0]
+					|| !newVal.find(room => room.roomId === this.room.roomId)
 				) {
 					this.showRoomsList = true
 				}
 
 				if (
-					!this.loadingMoreRooms &&
-					this.loadFirstRoomCasted &&
-					newVal[0] &&
-					(!oldVal || newVal.length !== oldVal.length)
+					!this.loadingMoreRooms
+					&& this.loadFirstRoomCasted
+					&& newVal[0]
+					&& (!oldVal || newVal.length !== oldVal.length)
 				) {
 					if (this.roomId) {
 						const room = newVal.find(r => r.roomId === this.roomId) || {}
 						this.fetchRoom({ room })
-					} else if (!this.isMobile || this.singleRoomCasted) {
+					}
+					else if (!this.isMobile || this.singleRoomCasted) {
 						this.fetchRoom({ room: this.orderedRooms[0] })
-					} else {
+					}
+					else {
 						this.showRoomsList = true
 					}
 				}
-			}
+			},
 		},
 
 		loadingRoomsCasted(val) {
-			if (val) this.room = {}
+			if (val)
+				this.room = {}
 		},
 
 		roomId: {
@@ -431,18 +325,20 @@ export default {
 				if (newVal && !this.loadingRoomsCasted && this.roomsCasted.length) {
 					const room = this.roomsCasted.find(r => r.roomId === newVal)
 					this.fetchRoom({ room })
-				} else if (oldVal && !newVal) {
+				}
+				else if (oldVal && !newVal) {
 					this.room = {}
 				}
-			}
+			},
 		},
 
 		room(val) {
-			if (!val || Object.entries(val).length === 0) return
+			if (!val || Object.entries(val).length === 0)
+				return
 
 			roomsValidation(val)
 
-			val.users.forEach(user => {
+			val.users.forEach((user) => {
 				partcipantsValidation(user)
 			})
 		},
@@ -451,14 +347,15 @@ export default {
 			immediate: true,
 			handler(val) {
 				this.showRoomsList = val
-			}
-		}
+			},
+		},
 	},
 
 	created() {
 		this.updateResponsive()
-		window.addEventListener('resize', ev => {
-			if (ev.isTrusted) this.updateResponsive()
+		window.addEventListener('resize', (ev) => {
+			if (ev.isTrusted)
+				this.updateResponsive()
 		})
 	},
 
@@ -484,13 +381,15 @@ export default {
 		},
 		toggleRoomsList() {
 			this.showRoomsList = !this.showRoomsList
-			if (this.isMobile) this.room = {}
+			if (this.isMobile)
+				this.room = {}
 			this.$emit('toggle-rooms-list', { opened: this.showRoomsList })
 		},
 		fetchRoom({ room }) {
 			this.room = room
 			this.fetchMessages({ reset: true })
-			if (this.isMobile) this.showRoomsList = false
+			if (this.isMobile)
+				this.showRoomsList = false
 		},
 		fetchMoreRooms() {
 			this.$emit('fetch-more-rooms')
@@ -518,13 +417,11 @@ export default {
 		},
 		openFile({ message, file }) {
 			if (this.handleCustomOpenFilesCasted) {
-				this.$emit('open-file', { message,
-					file,
-					defaultHandle: () => {
-						this._openFile({ message, file })
-					}
-				})
-			} else {
+				this.$emit('open-file', { message, file, defaultHandle: () => {
+					this._openFile({ message, file })
+				} })
+			}
+			else {
 				this._openFile({ message, file })
 			}
 		},
@@ -532,7 +429,8 @@ export default {
 			if (this.mediaPreviewEnabledCasted && file.action === 'preview') {
 				this.previewFile = file.file
 				this.showMediaPreview = true
-			} else {
+			}
+			else {
 				this.$emit('open-file', { message, file })
 			}
 		},
@@ -542,55 +440,164 @@ export default {
 		openFailedMessage({ message }) {
 			this.$emit('open-failed-message', {
 				message,
-				roomId: this.room.roomId
+				roomId: this.room.roomId,
 			})
 		},
 		menuActionHandler(ev) {
 			this.$emit('menu-action-handler', {
 				action: ev,
-				roomId: this.room.roomId
+				roomId: this.room.roomId,
 			})
 		},
 		roomActionHandler({ action, roomId }) {
 			this.$emit('room-action-handler', {
 				action,
-				roomId
+				roomId,
 			})
 		},
 		messageActionHandler(ev) {
 			this.$emit('message-action-handler', {
 				...ev,
-				roomId: this.room.roomId
+				roomId: this.room.roomId,
 			})
 		},
 		messageSelectionActionHandler(ev) {
 			this.$emit('message-selection-action-handler', {
 				...ev,
-				roomId: this.room.roomId
+				roomId: this.room.roomId,
 			})
 		},
 		sendMessageReaction(messageReaction) {
 			this.$emit('send-message-reaction', {
 				...messageReaction,
-				roomId: this.room.roomId
+				roomId: this.room.roomId,
 			})
 		},
 		typingMessage(message) {
 			this.$emit('typing-message', {
 				message,
-				roomId: this.room.roomId
+				roomId: this.room.roomId,
 			})
 		},
 		textareaActionHandler(message) {
 			this.$emit('textarea-action-handler', {
 				message,
-				roomId: this.room.roomId
+				roomId: this.room.roomId,
 			})
-		}
-	}
+		},
+	},
 }
 </script>
 
+<template>
+	<div class="vac-card-window" :style="[{ height }, cssVars]">
+		<div class="vac-chat-container">
+			<RoomsList
+				v-if="!singleRoomCasted"
+				:current-user-id="currentUserId"
+				:rooms="orderedRooms"
+				:loading-rooms="loadingRoomsCasted"
+				:rooms-loaded="roomsLoadedCasted"
+				:room="room"
+				:room-actions="roomActionsCasted"
+				:custom-search-room-enabled="customSearchRoomEnabled"
+				:text-messages="t"
+				:show-search="showSearchCasted"
+				:show-add-room="showAddRoomCasted"
+				:show-rooms-list="showRoomsList && roomsListOpenedCasted"
+				:text-formatting="textFormattingCasted"
+				:link-options="linkOptionsCasted"
+				:is-mobile="isMobile"
+				:scroll-distance="scrollDistance"
+				@fetch-room="fetchRoom"
+				@fetch-more-rooms="fetchMoreRooms"
+				@loading-more-rooms="loadingMoreRooms = $event"
+				@add-room="addRoom"
+				@search-room="searchRoom"
+				@room-action-handler="roomActionHandler"
+			>
+				<template v-for="el in slots" #[el.slot]="data">
+					<slot :name="el.slot" v-bind="data" />
+				</template>
+			</RoomsList>
+
+			<Room
+				:current-user-id="currentUserId"
+				:rooms="roomsCasted"
+				:room-id="room.roomId || ''"
+				:load-first-room="loadFirstRoomCasted"
+				:messages="messagesCasted"
+				:room-message="roomMessage"
+				:messages-loaded="messagesLoadedCasted"
+				:menu-actions="menuActionsCasted"
+				:message-actions="messageActionsCasted"
+				:message-selection-actions="messageSelectionActionsCasted"
+				:auto-scroll="autoScrollCasted"
+				:show-send-icon="showSendIconCasted"
+				:show-files="showFilesCasted"
+				:show-audio="showAudioCasted"
+				:audio-bit-rate="audioBitRate"
+				:audio-sample-rate="audioSampleRate"
+				:show-emojis="showEmojisCasted"
+				:show-reaction-emojis="showReactionEmojisCasted"
+				:show-new-messages-divider="showNewMessagesDividerCasted"
+				:show-footer="showFooterCasted"
+				:show-room-header="showRoomHeader"
+				:text-messages="t"
+				:single-room="singleRoomCasted"
+				:show-rooms-list="showRoomsList && roomsListOpenedCasted"
+				:text-formatting="textFormattingCasted"
+				:link-options="linkOptionsCasted"
+				:is-mobile="isMobile"
+				:loading-rooms="loadingRoomsCasted"
+				:room-info-enabled="roomInfoEnabledCasted"
+				:textarea-action-enabled="textareaActionEnabledCasted"
+				:textarea-auto-focus="textareaAutoFocusCasted"
+				:user-tags-enabled="userTagsEnabledCasted"
+				:emojis-suggestion-enabled="emojisSuggestionEnabledCasted"
+				:scroll-distance="scrollDistance"
+				:accepted-files="acceptedFiles"
+				:capture-files="captureFiles"
+				:multiple-files="multipleFilesCasted"
+				:templates-text="templatesTextCasted"
+				:username-options="usernameOptionsCasted"
+				:emoji-data-source="emojiDataSource"
+				:show-messages-started-text="showMessagesStarted"
+				@toggle-rooms-list="toggleRoomsList"
+				@room-info="roomInfo"
+				@fetch-messages="fetchMessages"
+				@send-message="sendMessage"
+				@edit-message="editMessage"
+				@delete-message="deleteMessage"
+				@open-file="openFile"
+				@open-user-tag="openUserTag"
+				@open-failed-message="openFailedMessage"
+				@menu-action-handler="menuActionHandler"
+				@message-action-handler="messageActionHandler"
+				@message-selection-action-handler="messageSelectionActionHandler"
+				@send-message-reaction="sendMessageReaction"
+				@typing-message="typingMessage"
+				@textarea-action-handler="textareaActionHandler"
+			>
+				<template v-for="el in slots" #[el.slot]="data">
+					<slot :name="el.slot" v-bind="data" />
+				</template>
+			</Room>
+		</div>
+		<transition name="vac-fade-preview" appear>
+			<MediaPreview
+				v-if="showMediaPreview"
+				:file="previewFile"
+				@close-media-preview="showMediaPreview = false"
+			>
+				<template v-for="el in slots" #[el.slot]="data">
+					<slot :name="el.slot" v-bind="data" />
+				</template>
+			</MediaPreview>
+		</transition>
+	</div>
+</template>
+
 <style lang="scss">
-@import '../styles/index.scss';
+@use '../styles/index.scss';
 </style>

@@ -1,3 +1,16 @@
+<script>
+export default {
+	name: 'AppLoader',
+
+	props: {
+		show: { type: Boolean, default: false },
+		infinite: { type: Boolean, default: false },
+		type: { type: String, required: true },
+		messageId: { type: String, default: '' },
+	},
+}
+</script>
+
 <template>
 	<transition name="vac-fade-spinner" appear>
 		<div
@@ -5,7 +18,7 @@
 			class="vac-loader-wrapper"
 			:class="{
 				'vac-container-center': !infinite,
-				'vac-container-top': infinite
+				'vac-container-top': infinite,
 			}"
 		>
 			<slot v-if="type === 'rooms'" name="spinner-icon-rooms">
@@ -16,7 +29,7 @@
 			</slot>
 			<slot
 				v-if="type === 'message-file'"
-				:name="'spinner-icon-message-file_' + messageId"
+				:name="`spinner-icon-message-file_${messageId}`"
 			>
 				<div id="vac-circle" />
 			</slot>
@@ -35,16 +48,3 @@
 		</div>
 	</transition>
 </template>
-
-<script>
-export default {
-	name: 'AppLoader',
-
-	props: {
-		show: { type: Boolean, default: false },
-		infinite: { type: Boolean, default: false },
-		type: { type: String, required: true },
-		messageId: { type: String, default: '' }
-	}
-}
-</script>

@@ -1,82 +1,13 @@
-<template>
-	<div class="vac-emoji-wrapper">
-		<div
-			class="vac-svg-button"
-			:class="{ 'vac-emoji-reaction': emojiReaction }"
-			@click="openEmoji"
-		>
-			<slot
-				:name="
-					messageId
-						? 'emoji-picker-reaction-icon_' + messageId
-						: 'emoji-picker-icon'
-				"
-			>
-				<svg-icon name="emoji" :param="emojiReaction ? 'reaction' : ''" />
-			</slot>
-		</div>
-
-		<template v-if="emojiOpened">
-			<template v-if="teleportTarget">
-				<Teleport :to="teleportTarget">
-					<transition name="vac-slide-up" appear>
-						<OnClickOutside @trigger="closeEmoji">
-							<div
-								class="vac-emoji-picker"
-								:class="{ 'vac-picker-reaction': emojiReaction }"
-								:style="{
-									height: `${emojiPickerHeight}px`,
-									top: positionTop ? emojiPickerHeight : `${emojiPickerTop}px`,
-									right: emojiPickerRight,
-									display: emojiPickerTop || !emojiReaction ? 'initial' : 'none'
-								}"
-							>
-								<emoji-picker
-									v-if="emojiOpened"
-									ref="emojiPicker"
-									:data-source="emojiDataSource"
-								/>
-							</div>
-						</OnClickOutside>
-					</transition>
-				</Teleport>
-			</template>
-			<template v-else>
-				<transition name="vac-slide-up" appear>
-					<OnClickOutside @trigger="closeEmoji">
-						<div
-							class="vac-emoji-picker"
-							:class="{ 'vac-picker-reaction': emojiReaction }"
-							:style="{
-								height: `${emojiPickerHeight}px`,
-								top: positionTop ? emojiPickerHeight : `${emojiPickerTop}px`,
-								right: emojiPickerRight,
-								display: emojiPickerTop || !emojiReaction ? 'initial' : 'none'
-							}"
-						>
-							<emoji-picker
-								v-if="emojiOpened"
-								ref="emojiPicker"
-								:data-source="emojiDataSource"
-							/>
-						</div>
-					</OnClickOutside>
-				</transition>
-			</template>
-		</template>
-	</div>
-</template>
-
 <script>
-import SvgIcon from '../SvgIcon/SvgIcon'
-import { findParentBySelector } from '../../utils/element-selector'
 import { OnClickOutside } from '@vueuse/components'
+import { findParentBySelector } from '../../utils/element-selector'
+import SvgIcon from '../SvgIcon/SvgIcon'
 
 export default {
 	name: 'EmojiPickerContainer',
 	components: {
 		SvgIcon,
-		OnClickOutside
+		OnClickOutside,
 	},
 
 	props: {
@@ -86,7 +17,7 @@ export default {
 		positionRight: { type: Boolean, default: false },
 		messageId: { type: String, default: '' },
 		emojiDataSource: { type: String, default: undefined },
-		teleportTarget: { type: Object, default: undefined }
+		teleportTarget: { type: Object, default: undefined },
 	},
 
 	emits: ['add-emoji', 'open-emoji', 'close-emoji'],
@@ -95,7 +26,7 @@ export default {
 		return {
 			emojiPickerHeight: 320,
 			emojiPickerTop: 0,
-			emojiPickerRight: ''
+			emojiPickerRight: '',
 		}
 	},
 
@@ -109,13 +40,13 @@ export default {
 						'emoji-click',
 						({ detail }) => {
 							this.$emit('add-emoji', {
-								unicode: detail.unicode
+								unicode: detail.unicode,
 							})
-						}
+						},
 					)
 				}, 0)
 			}
-		}
+		},
 	},
 
 	methods: {
@@ -153,7 +84,7 @@ export default {
 			this.setEmojiPickerPosition(
 				ev.clientY,
 				ev.view.innerWidth,
-				ev.view.innerHeight
+				ev.view.innerHeight,
 			)
 		},
 		closeEmoji() {
@@ -164,30 +95,102 @@ export default {
 			const roomFooterRef = findParentBySelector(this.$el, '#room-footer')
 
 			if (!roomFooterRef) {
-				if (mobileSize) this.emojiPickerRight = '-50px'
+				if (mobileSize)
+					this.emojiPickerRight = '-50px'
 				return
 			}
 
 			if (mobileSize) {
-				this.emojiPickerRight =
-					innerWidth / 2 - (this.positionTop ? 200 : 150) + 'px'
+				this.emojiPickerRight
+					= `${innerWidth / 2 - (this.positionTop ? 200 : 150)}px`
 				this.emojiPickerTop = 100
 				this.emojiPickerHeight = innerHeight - 200
-			} else {
+			}
+			else {
 				const roomFooterTop = roomFooterRef.getBoundingClientRect().top
-				const pickerTopPosition =
-					roomFooterTop - clientY > this.emojiPickerHeight - 50
+				const pickerTopPosition
+					= roomFooterTop - clientY > this.emojiPickerHeight - 50
 
-				if (pickerTopPosition) this.emojiPickerTop = clientY + 10
+				if (pickerTopPosition)
+					this.emojiPickerTop = clientY + 10
 				else this.emojiPickerTop = clientY - this.emojiPickerHeight - 10
 
 				this.emojiPickerRight = this.positionTop
 					? '0px'
 					: this.positionRight
-					? '60px'
-					: ''
+						? '60px'
+						: ''
 			}
-		}
-	}
+		},
+	},
 }
 </script>
+
+<template>
+	<div class="vac-emoji-wrapper">
+		<div
+			class="vac-svg-button"
+			:class="{ 'vac-emoji-reaction': emojiReaction }"
+			@click="openEmoji"
+		>
+			<slot
+				:name="
+					messageId
+						? `emoji-picker-reaction-icon_${messageId}`
+						: 'emoji-picker-icon'
+				"
+			>
+				<SvgIcon name="emoji" :param="emojiReaction ? 'reaction' : ''" />
+			</slot>
+		</div>
+
+		<template v-if="emojiOpened">
+			<template v-if="teleportTarget">
+				<Teleport :to="teleportTarget">
+					<transition name="vac-slide-up" appear>
+						<OnClickOutside @trigger="closeEmoji">
+							<div
+								class="vac-emoji-picker"
+								:class="{ 'vac-picker-reaction': emojiReaction }"
+								:style="{
+									height: `${emojiPickerHeight}px`,
+									top: positionTop ? emojiPickerHeight : `${emojiPickerTop}px`,
+									right: emojiPickerRight,
+									display: emojiPickerTop || !emojiReaction ? 'initial' : 'none',
+								}"
+							>
+								<emoji-picker
+									v-if="emojiOpened"
+									ref="emojiPicker"
+									:data-source="emojiDataSource"
+								/>
+							</div>
+						</OnClickOutside>
+					</transition>
+				</Teleport>
+			</template>
+			<template v-else>
+				<transition name="vac-slide-up" appear>
+					<OnClickOutside @trigger="closeEmoji">
+						<div
+							class="vac-emoji-picker"
+							:class="{ 'vac-picker-reaction': emojiReaction }"
+							:style="{
+								height: `${emojiPickerHeight}px`,
+								top: positionTop ? emojiPickerHeight : `${emojiPickerTop}px`,
+								right: emojiPickerRight,
+								display: emojiPickerTop || !emojiReaction ? 'initial' : 'none',
+							}"
+						>
+							<emoji-picker
+								v-if="emojiOpened"
+								ref="emojiPicker"
+								:data-source="emojiDataSource"
+							/>
+						</div>
+					</OnClickOutside>
+				</transition>
+			</template>
+		</template>
+	</div>
+</template>
