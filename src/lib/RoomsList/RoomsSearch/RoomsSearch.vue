@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import type { Room, TextMessages } from '@/types'
+import type { Room, I18n } from '@/types'
 
 import { computed } from 'vue'
 
 import SvgIcon from '../../../components/SvgIcon/SvgIcon.vue'
 
 const props = defineProps<{
-	textMessages: TextMessages
+	i18n: I18n
 	showSearch: boolean
 	showAddRoom: boolean
 	rooms: Room[]
@@ -25,7 +25,7 @@ const showSearchBar = computed(() => props.showSearch || props.showAddRoom)
 	<div
 		:class="{
 			'vac-box-search': showSearchBar,
-			'vac-box-empty': !showSearchBar,
+			'vac-box-empty': !showSearchBar
 		}"
 	>
 		<template v-if="showSearch">
@@ -37,11 +37,11 @@ const showSearchBar = computed(() => props.showSearch || props.showAddRoom)
 			<input
 				v-if="!loadingRooms && rooms.length"
 				type="search"
-				:placeholder="textMessages.SEARCH"
+				:placeholder="i18n.search"
 				autocomplete="off"
 				class="vac-input"
 				@input="$emit('search-room', $event)"
-			>
+			/>
 		</template>
 		<div
 			v-if="showAddRoom"

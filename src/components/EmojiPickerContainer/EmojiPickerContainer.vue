@@ -3,24 +3,31 @@ import { OnClickOutside } from '@vueuse/components'
 import { ref, useTemplateRef, watch } from 'vue'
 import SvgIcon from '@/components/SvgIcon/SvgIcon.vue'
 import { findParentBySelector } from '@/utils/element-selector'
+import { I18n } from '@/types'
 
-const props = withDefaults(defineProps<{
-	emojiOpened?: boolean
-	emojiReaction?: boolean
-	positionTop?: boolean
-	positionRight?: boolean
-	messageId?: string
-	emojiDataSource?: string
-	teleportTarget?: HTMLElement
-}>(), {
-	emojiOpened: false,
-	emojiReaction: false,
-	positionTop: false,
-	positionRight: false,
-	messageId: '',
-	emojiDataSource: undefined,
-	teleportTarget: undefined,
-})
+const props = withDefaults(
+	defineProps<{
+		emojiOpened?: boolean
+		emojiReaction?: boolean
+		positionTop?: boolean
+		positionRight?: boolean
+		messageId?: string
+		emojiDataSource?: string
+		teleportTarget?: HTMLElement
+		i18n: I18n
+	}>(),
+	{
+		emojiOpened: false,
+		emojiReaction: false,
+		positionTop: false,
+		positionRight: false,
+		messageId: '',
+		emojiDataSource: undefined,
+		teleportTarget: undefined
+	}
+)
+
+console.log(props.i18n)
 
 const emit = defineEmits<{
 	'add-emoji': [payload: { unicode: string }]
@@ -33,24 +40,30 @@ const emojiPickerTop = ref(0)
 const emojiPickerRight = ref('')
 
 const root = useTemplateRef<HTMLElement>('root')
+const toggleButton = useTemplateRef<HTMLElement>('toggleButton')
 const emojiPicker = useTemplateRef<HTMLElement>('emojiPicker')
 
-watch(() => props.emojiOpened, (val) => {
-	if (val) {
-		setTimeout(() => {
-			addCustomStyling()
+watch(
+	() => props.emojiOpened,
+	val => {
+		if (val) {
+			setTimeout(() => {
+				if (!emojiPicker.value?.shadowRoot) return
 
-			emojiPicker.value!.shadowRoot!.addEventListener(
-				'emoji-click',
-				({ detail }: any) => {
-					emit('add-emoji', {
-						unicode: detail.unicode,
-					})
-				},
-			)
-		}, 0)
+				addCustomStyling()
+
+				emojiPicker.value.shadowRoot.addEventListener(
+					'emoji-click',
+					({ detail }: any) => {
+						emit('add-emoji', {
+							unicode: detail.unicode
+						})
+					}
+				)
+			}, 0)
+		}
 	}
-})
+)
 
 function addCustomStyling(): void {
 	const picker = `.picker {
@@ -84,47 +97,43 @@ function addCustomStyling(): void {
 
 function openEmoji(ev: MouseEvent): void {
 	emit('open-emoji', !props.emojiOpened)
-	setEmojiPickerPosition(
-		ev.clientY,
-		ev.view!.innerWidth,
-		ev.view!.innerHeight,
-	)
+	setEmojiPickerPosition(ev.clientY, ev.view!.innerWidth, ev.view!.innerHeight)
 }
 
 function closeEmoji(): void {
 	emit('open-emoji', false)
 }
 
-function setEmojiPickerPosition(clientY: number, innerWidth: number, innerHeight: number): void {
+function setEmojiPickerPosition(
+	clientY: number,
+	innerWidth: number,
+	innerHeight: number
+): void {
 	const mobileSize = innerWidth < 500 || innerHeight < 700
 	const roomFooterRef = findParentBySelector(root.value, '#room-footer')
 
 	if (!roomFooterRef) {
-		if (mobileSize)
-			emojiPickerRight.value = '-50px'
+		if (mobileSize) emojiPickerRight.value = '-50px'
 		return
 	}
 
 	if (mobileSize) {
-		emojiPickerRight.value
-			= `${innerWidth / 2 - (props.positionTop ? 200 : 150)}px`
+		emojiPickerRight.value = `${innerWidth / 2 - (props.positionTop ? 200 : 150)}px`
 		emojiPickerTop.value = 100
 		emojiPickerHeight.value = innerHeight - 200
-	}
-	else {
+	} else if (props.positionTop) {
+		const rect = root.value!.getBoundingClientRect()
+		emojiPickerTop.value = Math.max(10, rect.top - emojiPickerHeight.value - 10)
+		emojiPickerRight.value = `${innerWidth - rect.right}px`
+	} else {
 		const roomFooterTop = roomFooterRef.getBoundingClientRect().top
-		const pickerTopPosition
-			= roomFooterTop - clientY > emojiPickerHeight.value - 50
+		const pickerTopPosition =
+			roomFooterTop - clientY > emojiPickerHeight.value - 50
 
-		if (pickerTopPosition)
-			emojiPickerTop.value = clientY + 10
+		if (pickerTopPosition) emojiPickerTop.value = clientY + 10
 		else emojiPickerTop.value = clientY - emojiPickerHeight.value - 10
 
-		emojiPickerRight.value = props.positionTop
-			? '0px'
-			: props.positionRight
-				? '60px'
-				: ''
+		emojiPickerRight.value = props.positionRight ? '60px' : ''
 	}
 }
 </script>
@@ -132,6 +141,7 @@ function setEmojiPickerPosition(clientY: number, innerWidth: number, innerHeight
 <template>
 	<div ref="root" class="vac-emoji-wrapper">
 		<div
+			ref="toggleButton"
 			class="vac-svg-button"
 			:class="{ 'vac-emoji-reaction': emojiReaction }"
 			@click="openEmoji"
@@ -151,21 +161,27 @@ function setEmojiPickerPosition(clientY: number, innerWidth: number, innerHeight
 			<template v-if="teleportTarget">
 				<Teleport :to="teleportTarget">
 					<transition name="vac-slide-up" appear>
-						<OnClickOutside @trigger="closeEmoji">
+						<OnClickOutside
+							:options="{ ignore: [toggleButton!] }"
+							@trigger="closeEmoji"
+						>
 							<div
 								class="vac-emoji-picker"
 								:class="{ 'vac-picker-reaction': emojiReaction }"
 								:style="{
+									position: positionTop ? 'fixed' : undefined,
 									height: `${emojiPickerHeight}px`,
-									top: positionTop ? emojiPickerHeight : `${emojiPickerTop}px`,
+									top: `${emojiPickerTop}px`,
+									bottom: positionTop ? 'auto' : undefined,
 									right: emojiPickerRight,
-									display: emojiPickerTop || !emojiReaction ? 'initial' : 'none',
+									display: emojiPickerTop || !emojiReaction ? 'initial' : 'none'
 								}"
 							>
 								<emoji-picker
 									v-if="emojiOpened"
 									ref="emojiPicker"
 									:data-source="emojiDataSource"
+									:i18n="i18n.emojiPicker"
 								/>
 							</div>
 						</OnClickOutside>
@@ -174,21 +190,27 @@ function setEmojiPickerPosition(clientY: number, innerWidth: number, innerHeight
 			</template>
 			<template v-else>
 				<transition name="vac-slide-up" appear>
-					<OnClickOutside @trigger="closeEmoji">
+					<OnClickOutside
+						:options="{ ignore: [toggleButton!] }"
+						@trigger="closeEmoji"
+					>
 						<div
 							class="vac-emoji-picker"
 							:class="{ 'vac-picker-reaction': emojiReaction }"
 							:style="{
+								position: positionTop ? 'fixed' : undefined,
 								height: `${emojiPickerHeight}px`,
-								top: positionTop ? emojiPickerHeight : `${emojiPickerTop}px`,
+								top: `${emojiPickerTop}px`,
+								bottom: positionTop ? 'auto' : undefined,
 								right: emojiPickerRight,
-								display: emojiPickerTop || !emojiReaction ? 'initial' : 'none',
+								display: emojiPickerTop || !emojiReaction ? 'initial' : 'none'
 							}"
 						>
 							<emoji-picker
 								v-if="emojiOpened"
 								ref="emojiPicker"
 								:data-source="emojiDataSource"
+								:i18n="i18n.emojiPicker"
 							/>
 						</div>
 					</OnClickOutside>

@@ -126,20 +126,50 @@ export interface LinkOptions {
 	rel?: string | null
 }
 
-export interface TextMessages {
-	ROOMS_EMPTY: string
-	ROOM_EMPTY: string
-	NEW_MESSAGES: string
-	MESSAGE_DELETED: string
-	MESSAGES_EMPTY: string
-	CONVERSATION_STARTED: string
-	TYPE_MESSAGE: string
-	SEARCH: string
-	IS_ONLINE: string
-	LAST_SEEN: string
-	IS_TYPING: string
-	CANCEL_SELECT_MESSAGE: string
-	[key: string]: StringNumber
+export type PartialDeep<T> = {
+	[P in keyof T]?: T[P] extends object ? PartialDeep<T[P]> : T[P]
+}
+
+export interface I18n {
+	roomsEmpty: string
+	roomEmpty: string
+	newMessages: string
+	messageDeleted: string
+	messagesEmpty: string
+	conversationStarted: string
+	typeMessage: string
+	search: string
+	isOnline: string
+	lastSeen: string
+	isTyping: string
+	cancelSelectMessage: string
+	emojiPicker: {
+		categories: {
+			'custom': string
+			'smileys-emotion': string
+			'people-body': string
+			'animals-nature': string
+			'food-drink': string
+			'travel-places': string
+			'activities': string
+			'objects': string
+			'symbols': string
+			'flags': string
+		}
+		categoriesLabel: string
+		emojiUnsupportedMessage: string
+		favoritesLabel: string
+		loadingMessage: string
+		networkErrorMessage: string
+		regionLabel: string
+		searchDescription: string
+		searchLabel: string
+		searchResultsLabel: string
+		skinToneDescription: string
+		skinToneLabel: string
+		skinTones: ('Default' | 'Light' | 'Medium-Light' | 'Medium' | 'Medium-Dark' | 'Dark')[]
+		skinTonesLabel: string
+	}
 }
 
 export interface ThemeStyles {
@@ -164,7 +194,7 @@ export interface Props {
 	responsiveBreakpoint?: number
 	singleRoom?: boolean
 	roomsListOpened?: boolean
-	textMessages?: Record<string, StringNumber>
+	i18n?: PartialDeep<I18n>
 	currentUserId?: string
 	rooms?: Room[]
 	roomsOrder?: 'desc' | 'asc'

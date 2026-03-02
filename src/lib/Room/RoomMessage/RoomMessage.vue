@@ -9,7 +9,7 @@ import type {
 	RoomUser,
 	StringNumber,
 	TextFormatting,
-	TextMessages,
+	I18n,
 	UsernameOptions
 } from '@/types'
 
@@ -30,7 +30,7 @@ import MessageReply from './MessageReply/MessageReply.vue'
 const props = withDefaults(
 	defineProps<{
 		currentUserId: StringNumber
-		textMessages: TextMessages
+		i18n: I18n
 		index: number
 		message: Message
 		messages: Message[]
@@ -263,7 +263,7 @@ function selectMessage() {
 		</div>
 
 		<div v-if="newMessage._id === message._id" class="vac-line-new">
-			{{ textMessages.NEW_MESSAGES }}
+			{{ i18n.newMessages }}
 		</div>
 
 		<div v-if="message.system" class="vac-card-info vac-card-system">
@@ -273,7 +273,7 @@ function selectMessage() {
 					:content="message.content ?? ''"
 					:deleted="!!message.deleted"
 					:users="roomUsers"
-					:text-messages="textMessages"
+					:i18n="i18n"
 					:text-formatting="textFormatting"
 					:link-options="linkOptions"
 					@open-user-tag="openUserTag"
@@ -360,7 +360,7 @@ function selectMessage() {
 							:deleted="!!message.deleted"
 							:users="roomUsers"
 							:text-formatting="textFormatting"
-							:text-messages="textMessages"
+							:i18n="i18n"
 							:link-options="linkOptions"
 							@open-user-tag="openUserTag"
 						>
@@ -436,6 +436,7 @@ function selectMessage() {
 							:hover-audio-progress="hoverAudioProgress"
 							:emoji-data-source="emojiDataSource"
 							:teleport-target="emojiTarget ?? undefined"
+							:i18n="i18n"
 							@update-message-hover="messageHover = $event"
 							@update-options-opened="optionsOpened = $event"
 							@update-emoji-opened="emojiOpened = $event"

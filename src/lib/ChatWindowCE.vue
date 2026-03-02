@@ -10,6 +10,7 @@ import type {
 	DeleteMessageEvent,
 	EditMessageEvent,
 	FetchMessagesEvent,
+	I18n,
 	LinkOptions,
 	MenuActionHandlerEvent,
 	Message,
@@ -19,6 +20,7 @@ import type {
 	OpenFailedMessageEvent,
 	OpenFileEvent,
 	OpenUserTagEvent,
+	PartialDeep,
 	RoomActionHandlerEvent,
 	RoomInfoEvent,
 	Room as RoomType,
@@ -31,7 +33,7 @@ import type {
 	TextFormatting,
 	ToggleRoomsListEvent,
 	TypingMessageEvent,
-	UsernameOptions,
+	UsernameOptions
 } from '@/types'
 
 import { computed } from 'vue'
@@ -46,7 +48,7 @@ const props = withDefaults(
 		responsiveBreakpoint?: number
 		singleRoom?: boolean | string
 		roomsListOpened?: boolean | string
-		textMessages?: Record<string, StringNumber> | string
+		i18n?: PartialDeep<I18n> | string
 		currentUserId?: string
 		rooms?: RoomType[] | string
 		roomsOrder?: 'desc' | 'asc'
@@ -98,7 +100,7 @@ const props = withDefaults(
 		responsiveBreakpoint: 900,
 		singleRoom: false,
 		roomsListOpened: true,
-		textMessages: () => ({}),
+		i18n: undefined,
 		currentUserId: '',
 		rooms: () => [],
 		roomsOrder: 'desc',
@@ -114,18 +116,18 @@ const props = withDefaults(
 			{ name: 'replyMessage', title: 'Reply' },
 			{ name: 'editMessage', title: 'Edit Message', onlyMe: true },
 			{ name: 'deleteMessage', title: 'Delete Message', onlyMe: true },
-			{ name: 'selectMessages', title: 'Select' },
+			{ name: 'selectMessages', title: 'Select' }
 		],
 		messageSelectionActions: () => [],
 		autoScroll: () => ({
 			send: {
 				new: true,
-				newAfterScrollUp: true,
+				newAfterScrollUp: true
 			},
 			receive: {
 				new: true,
-				newAfterScrollUp: false,
-			},
+				newAfterScrollUp: false
+			}
 		}),
 		customSearchRoomEnabled: false,
 		showSearch: true,
@@ -155,8 +157,8 @@ const props = withDefaults(
 		usernameOptions: () => ({ minUsers: 3, currentUser: false }),
 		emojiDataSource: undefined,
 		handleCustomOpenFiles: false,
-		showMessagesStarted: true,
-	},
+		showMessagesStarted: true
+	}
 )
 
 const emit = defineEmits<{
@@ -178,7 +180,9 @@ const emit = defineEmits<{
 	'add-room': []
 	'search-room': [payload: SearchRoomEvent]
 	'room-action-handler': [payload: RoomActionHandlerEvent]
-	'message-selection-action-handler': [payload: MessageSelectionActionHandlerEvent]
+	'message-selection-action-handler': [
+		payload: MessageSelectionActionHandlerEvent
+	]
 }>()
 
 const castedProps = computed(() => ({
@@ -188,7 +192,7 @@ const castedProps = computed(() => ({
 	responsiveBreakpoint: props.responsiveBreakpoint,
 	singleRoom: castBoolean(props.singleRoom),
 	roomsListOpened: castBoolean(props.roomsListOpened),
-	textMessages: castObject<Record<string, StringNumber>>(props.textMessages),
+	i18n: castObject<Record<string, StringNumber>>(props.i18n),
 	currentUserId: props.currentUserId,
 	rooms: castArray<RoomType>(props.rooms),
 	roomsOrder: props.roomsOrder,
@@ -201,7 +205,9 @@ const castedProps = computed(() => ({
 	roomActions: castArray<CustomAction>(props.roomActions),
 	menuActions: castArray<CustomAction>(props.menuActions),
 	messageActions: castArray<MessageAction>(props.messageActions),
-	messageSelectionActions: castArray<CustomAction>(props.messageSelectionActions),
+	messageSelectionActions: castArray<CustomAction>(
+		props.messageSelectionActions
+	),
 	autoScroll: castObject<AutoScroll>(props.autoScroll),
 	customSearchRoomEnabled: castBoolean(props.customSearchRoomEnabled),
 	showSearch: castBoolean(props.showSearch),
@@ -231,7 +237,7 @@ const castedProps = computed(() => ({
 	usernameOptions: castObject<UsernameOptions>(props.usernameOptions),
 	emojiDataSource: props.emojiDataSource,
 	handleCustomOpenFiles: props.handleCustomOpenFiles,
-	showMessagesStarted: props.showMessagesStarted,
+	showMessagesStarted: props.showMessagesStarted
 }))
 </script>
 
@@ -256,7 +262,9 @@ const castedProps = computed(() => ({
 		@add-room="emit('add-room')"
 		@search-room="e => emit('search-room', e)"
 		@room-action-handler="e => emit('room-action-handler', e)"
-		@message-selection-action-handler="e => emit('message-selection-action-handler', e)"
+		@message-selection-action-handler="
+			e => emit('message-selection-action-handler', e)
+		"
 	>
 		<template v-for="(_, name) in $slots" :key="name" #[name]="data">
 			<slot :name="name" v-bind="data ?? {}" />

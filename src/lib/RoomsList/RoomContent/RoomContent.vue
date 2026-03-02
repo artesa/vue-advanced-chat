@@ -5,7 +5,7 @@ import type {
 	Room,
 	StringNumber,
 	TextFormatting,
-	TextMessages
+	I18n
 } from '@/types'
 
 import { computed, ref } from 'vue'
@@ -13,7 +13,7 @@ import FormatMessage from '@/components/FormatMessage/FormatMessage.vue'
 
 import SvgIcon from '@/components/SvgIcon/SvgIcon.vue'
 import { isAudioFile } from '@/utils/media-file'
-import vClickOutside from '@/utils/on-click-outside'
+import { vOnClickOutside } from '@vueuse/components'
 
 import typingText from '@/utils/typing-text'
 
@@ -22,7 +22,7 @@ const props = defineProps<{
 	room: Room
 	textFormatting: TextFormatting
 	linkOptions: LinkOptions
-	textMessages: TextMessages
+	i18n: I18n
 	roomActions: CustomAction[]
 }>()
 
@@ -35,7 +35,7 @@ const emit = defineEmits<{
 const roomMenuOpened = ref<StringNumber | null>(null)
 
 const typingUsers = computed(() => {
-	return typingText(props.room, String(props.currentUserId), props.textMessages)
+	return typingText(props.room, String(props.currentUserId), props.i18n)
 })
 
 const getLastMessage = computed(() => {
@@ -174,7 +174,7 @@ function closeRoomMenu(): void {
 						:content="getLastMessage"
 						:deleted="!!room.lastMessage.deleted && !typingUsers"
 						:users="room.users"
-						:text-messages="textMessages"
+						:i18n="i18n"
 						:linkify="false"
 						:text-formatting="textFormatting"
 						:link-options="linkOptions"
@@ -210,7 +210,7 @@ function closeRoomMenu(): void {
 							<transition v-if="roomActions.length" name="vac-slide-left">
 								<div
 									v-if="roomMenuOpened === room.roomId"
-									v-click-outside="closeRoomMenu"
+									v-on-click-outside="closeRoomMenu"
 									class="vac-menu-options"
 								>
 									<div class="vac-menu-list">

@@ -1,6 +1,6 @@
-import type { Room, TextMessages } from '@/types'
+import type { I18n, Room } from '@/types'
 
-export default (room: Room, currentUserId: string, textMessages: TextMessages): string | undefined => {
+export default (room: Room, currentUserId: string, i18n: I18n): string | undefined => {
 	if (room.typingUsers && room.typingUsers.length) {
 		const typingUsers = room.users.filter((user) => {
 			if (user._id === currentUserId)
@@ -16,13 +16,13 @@ export default (room: Room, currentUserId: string, textMessages: TextMessages): 
 			return
 
 		if (room.users.length === 2) {
-			return textMessages.IS_TYPING
+			return i18n.isTyping
 		}
 		else {
 			return (
 				`${typingUsers.map(user => user.username).join(', ')
 				} ${
-					textMessages.IS_TYPING}`
+					i18n.isTyping}`
 			)
 		}
 	}

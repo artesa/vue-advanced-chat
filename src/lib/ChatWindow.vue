@@ -1,11 +1,9 @@
 <script setup lang="ts">
 import type {
-	AutoScroll,
 	CustomAction,
 	DeleteMessageEvent,
 	EditMessageEvent,
 	FetchMessagesEvent,
-	LinkOptions,
 	MenuActionHandlerEvent,
 	Message,
 	MessageAction,
@@ -15,6 +13,7 @@ import type {
 	OpenFailedMessageEvent,
 	OpenFileEvent,
 	OpenUserTagEvent,
+	Props,
 	RoomActionHandlerEvent,
 	RoomInfoEvent,
 	RoomOpenFileEvent,
@@ -23,17 +22,13 @@ import type {
 	SearchRoomEvent,
 	SendMessageEvent,
 	SendMessageReactionEvent,
-	StringNumber,
-	TemplateText,
 	TextareaActionHandlerEvent,
-	TextFormatting,
 	ToggleRoomsListEvent,
-	TypingMessageEvent,
-	sernameOptions,
+	TypingMessageEvent
 } from '@/types'
 
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
-import locales from '@/locales'
+import { defaultLocale } from '@/locales'
 import { cssThemeVars, defaultThemeStyles } from '@/themes'
 
 import { partcipantsValidation, roomsValidation } from '@/utils/data-validation'
@@ -42,126 +37,72 @@ import Room from './Room/Room.vue'
 
 import RoomsList from './RoomsList/RoomsList.vue'
 
-const props = withDefaults(
-	defineProps<{
-		height?: string
-		theme?: 'light' | 'dark'
-		styles?: Record<string, Record<string, string>>
-		responsiveBreakpoint?: number
-		singleRoom?: boolean
-		roomsListOpened?: boolean
-		textMessages?: Record<string, StringNumber>
-		currentUserId?: StringNumber
-		rooms?: RoomType[]
-		roomsOrder?: 'desc' | 'asc'
-		loadingRooms?: boolean
-		roomsLoaded?: boolean
-		roomId?: StringNumber | null
-		loadFirstRoom?: boolean
-		messages?: Message[]
-		messagesLoaded?: boolean
-		roomActions?: CustomAction[]
-		menuActions?: CustomAction[]
-		messageActions?: MessageAction[]
-		messageSelectionActions?: CustomAction[]
-		autoScroll?: AutoScroll
-		customSearchRoomEnabled?: boolean
-		showSearch?: boolean
-		showAddRoom?: boolean
-		showSendIcon?: boolean
-		showFiles?: boolean
-		showAudio?: boolean
-		showEmojis?: boolean
-		showReactionEmojis?: boolean
-		showNewMessagesDivider?: boolean
-		showFooter?: boolean
-		showRoomHeader?: boolean
-		textFormatting?: TextFormatting
-		linkOptions?: LinkOptions
-		roomInfoEnabled?: boolean
-		textareaActionEnabled?: boolean
-		textareaAutoFocus?: boolean
-		userTagsEnabled?: boolean
-		emojisSuggestionEnabled?: boolean
-		roomMessage?: string
-		scrollDistance?: number
-		acceptedFiles?: string
-		captureFiles?: string
-		multipleFiles?: boolean
-		templatesText?: TemplateText[]
-		mediaPreviewEnabled?: boolean
-		usernameOptions?: UsernameOptions
-		emojiDataSource?: string
-		handleCustomOpenFiles?: boolean
-		showMessagesStarted?: boolean
-	}>(),
-	{
-		height: '600px',
-		theme: 'light',
-		styles: () => ({}),
-		responsiveBreakpoint: 900,
-		singleRoom: false,
-		roomsListOpened: true,
-		textMessages: () => ({}),
-		currentUserId: '',
-		rooms: () => [],
-		roomsOrder: 'desc',
-		loadingRooms: false,
-		roomsLoaded: false,
-		roomId: null,
-		loadFirstRoom: true,
-		messages: () => [],
-		messagesLoaded: false,
-		roomActions: () => [],
-		menuActions: () => [],
-		messageActions: () => [
-			{ name: 'replyMessage', title: 'Reply' },
-			{ name: 'editMessage', title: 'Edit Message', onlyMe: true },
-			{ name: 'deleteMessage', title: 'Delete Message', onlyMe: true },
-			{ name: 'selectMessages', title: 'Select' },
-		],
-		messageSelectionActions: () => [],
-		autoScroll: () => ({
-			send: {
-				new: true,
-				newAfterScrollUp: true,
-			},
-			receive: {
-				new: true,
-				newAfterScrollUp: false,
-			},
-		}),
-		customSearchRoomEnabled: false,
-		showSearch: true,
-		showAddRoom: true,
-		showSendIcon: true,
-		showFiles: true,
-		showAudio: true,
-		showEmojis: true,
-		showReactionEmojis: true,
-		showNewMessagesDivider: true,
-		showFooter: true,
-		showRoomHeader: true,
-		textFormatting: () => ({ disabled: false }),
-		linkOptions: () => ({ disabled: false, target: '_blank', rel: null }),
-		roomInfoEnabled: false,
-		textareaActionEnabled: false,
-		textareaAutoFocus: true,
-		userTagsEnabled: true,
-		emojisSuggestionEnabled: true,
-		roomMessage: '',
-		scrollDistance: 60,
-		acceptedFiles: '*',
-		captureFiles: undefined,
-		multipleFiles: true,
-		templatesText: () => [],
-		mediaPreviewEnabled: true,
-		usernameOptions: () => ({ minUsers: 3, currentUser: false }),
-		emojiDataSource: undefined,
-		handleCustomOpenFiles: false,
-		showMessagesStarted: true,
-	},
-)
+const props = withDefaults(defineProps<Props>(), {
+	height: '600px',
+	theme: 'light',
+	styles: () => ({}),
+	responsiveBreakpoint: 900,
+	singleRoom: false,
+	roomsListOpened: true,
+	i18n: undefined,
+	currentUserId: '',
+	rooms: () => [],
+	roomsOrder: 'desc',
+	loadingRooms: false,
+	roomsLoaded: false,
+	roomId: null,
+	loadFirstRoom: true,
+	messages: () => [],
+	messagesLoaded: false,
+	roomActions: () => [],
+	menuActions: () => [],
+	messageActions: () => [
+		{ name: 'replyMessage', title: 'Reply' },
+		{ name: 'editMessage', title: 'Edit Message', onlyMe: true },
+		{ name: 'deleteMessage', title: 'Delete Message', onlyMe: true },
+		{ name: 'selectMessages', title: 'Select' }
+	],
+	messageSelectionActions: () => [],
+	autoScroll: () => ({
+		send: {
+			new: true,
+			newAfterScrollUp: true
+		},
+		receive: {
+			new: true,
+			newAfterScrollUp: false
+		}
+	}),
+	customSearchRoomEnabled: false,
+	showSearch: true,
+	showAddRoom: true,
+	showSendIcon: true,
+	showFiles: true,
+	showAudio: true,
+	showEmojis: true,
+	showReactionEmojis: true,
+	showNewMessagesDivider: true,
+	showFooter: true,
+	showRoomHeader: true,
+	textFormatting: () => ({ disabled: false }),
+	linkOptions: () => ({ disabled: false, target: '_blank', rel: null }),
+	roomInfoEnabled: false,
+	textareaActionEnabled: false,
+	textareaAutoFocus: true,
+	userTagsEnabled: true,
+	emojisSuggestionEnabled: true,
+	roomMessage: '',
+	scrollDistance: 60,
+	acceptedFiles: '*',
+	captureFiles: undefined,
+	multipleFiles: true,
+	templatesText: () => [],
+	mediaPreviewEnabled: true,
+	usernameOptions: () => ({ minUsers: 3, currentUser: false }),
+	emojiDataSource: undefined,
+	handleCustomOpenFiles: false,
+	showMessagesStarted: true
+})
 
 const emit = defineEmits<{
 	'toggle-rooms-list': [payload: ToggleRoomsListEvent]
@@ -183,7 +124,7 @@ const emit = defineEmits<{
 	'search-room': [payload: SearchRoomEvent]
 	'room-action-handler': [payload: RoomActionHandlerEvent]
 	'message-selection-action-handler': [
-		payload: MessageSelectionActionHandlerEvent,
+		payload: MessageSelectionActionHandlerEvent
 	]
 }>()
 
@@ -195,10 +136,23 @@ const isMobile = ref(false)
 const showMediaPreview = ref(false)
 const previewFile = ref({} as MessageFile)
 
-const t = computed(() => ({
-	...locales,
-	...props.textMessages,
-}))
+const t = computed(() => {
+	// merge deep
+	return {
+		...defaultLocale,
+		...props.i18n,
+		emojiPicker: {
+			...defaultLocale.emojiPicker,
+			...props.i18n?.emojiPicker,
+			categories: {
+				...defaultLocale.emojiPicker?.categories,
+				...props.i18n?.emojiPicker?.categories
+			}
+		}
+	}
+})
+
+console.log(t.value)
 
 const cssVars = computed(() => {
 	const defaultStyles = defaultThemeStyles[props.theme] as unknown as Record<
@@ -207,10 +161,10 @@ const cssVars = computed(() => {
 	>
 	const customStyles: Record<string, Record<string, string>> = {}
 
-	Object.keys(defaultStyles).forEach((key) => {
+	Object.keys(defaultStyles).forEach(key => {
 		customStyles[key] = {
 			...defaultStyles[key],
-			...(props.styles?.[key] || {}),
+			...(props.styles?.[key] || {})
 		}
 	})
 
@@ -235,39 +189,36 @@ watch(
 	() => props.rooms,
 	(newVal, oldVal) => {
 		if (
-			!newVal![0]
-			|| !newVal!.find(r => r.roomId === (room.value as RoomType).roomId)
+			!newVal![0] ||
+			!newVal!.find(r => r.roomId === (room.value as RoomType).roomId)
 		) {
 			showRoomsList.value = true
 		}
 
 		if (
-			!loadingMoreRooms.value
-			&& props.loadFirstRoom
-			&& newVal![0]
-			&& (!oldVal || newVal!.length !== oldVal.length)
+			!loadingMoreRooms.value &&
+			props.loadFirstRoom &&
+			newVal![0] &&
+			(!oldVal || newVal!.length !== oldVal.length)
 		) {
 			if (props.roomId) {
 				const found = newVal!.find(r => r.roomId === props.roomId) || {}
 				fetchRoom({ room: found as RoomType })
-			}
-			else if (!isMobile.value || props.singleRoom) {
+			} else if (!isMobile.value || props.singleRoom) {
 				fetchRoom({ room: orderedRooms.value[0] })
-			}
-			else {
+			} else {
 				showRoomsList.value = true
 			}
 		}
 	},
-	{ immediate: true, deep: true },
+	{ immediate: true, deep: true }
 )
 
 watch(
 	() => props.loadingRooms,
-	(val) => {
-		if (val)
-			room.value = {}
-	},
+	val => {
+		if (val) room.value = {}
+	}
 )
 
 watch(
@@ -276,30 +227,28 @@ watch(
 		if (newVal && !props.loadingRooms && props.rooms!.length) {
 			const found = props.rooms!.find(r => r.roomId === newVal)
 			fetchRoom({ room: found as RoomType })
-		}
-		else if (oldVal && !newVal) {
+		} else if (oldVal && !newVal) {
 			room.value = {}
 		}
 	},
-	{ immediate: true },
+	{ immediate: true }
 )
 
-watch(room, (val) => {
-	if (!val || Object.entries(val).length === 0)
-		return
+watch(room, val => {
+	if (!val || Object.entries(val).length === 0) return
 
 	roomsValidation(val as any)
-	;(val as RoomType).users.forEach((user) => {
+	;(val as RoomType).users.forEach(user => {
 		partcipantsValidation(user as any)
 	})
 })
 
 watch(
 	() => props.roomsListOpened,
-	(val) => {
+	val => {
 		showRoomsList.value = !!val
 	},
-	{ immediate: true },
+	{ immediate: true }
 )
 
 // Created logic
@@ -310,8 +259,7 @@ function updateResponsive() {
 updateResponsive()
 
 function onResize(ev: Event) {
-	if ((ev as UIEvent).isTrusted)
-		updateResponsive()
+	if ((ev as UIEvent).isTrusted) updateResponsive()
 }
 
 window.addEventListener('resize', onResize)
@@ -323,16 +271,14 @@ onBeforeUnmount(() => {
 // Methods
 function toggleRoomsList() {
 	showRoomsList.value = !showRoomsList.value
-	if (isMobile.value)
-		room.value = {}
+	if (isMobile.value) room.value = {}
 	emit('toggle-rooms-list', { opened: showRoomsList.value })
 }
 
 function fetchRoom({ room: r }: { room: RoomType }) {
 	room.value = r
 	fetchMessages({ reset: true })
-	if (isMobile.value)
-		showRoomsList.value = false
+	if (isMobile.value) showRoomsList.value = false
 }
 
 function fetchMoreRooms() {
@@ -358,14 +304,14 @@ function fetchMessages(options?: { reset?: boolean }) {
 function sendMessage(message: Omit<SendMessageEvent, 'roomId'>) {
 	emit('send-message', {
 		...message,
-		roomId: (room.value as RoomType).roomId,
+		roomId: (room.value as RoomType).roomId
 	})
 }
 
 function editMessage(message: Omit<EditMessageEvent, 'roomId'>) {
 	emit('edit-message', {
 		...message,
-		roomId: (room.value as RoomType).roomId,
+		roomId: (room.value as RoomType).roomId
 	})
 }
 
@@ -382,10 +328,9 @@ function openFile(options: RoomOpenFileEvent) {
 			action,
 			defaultHandle: () => {
 				_openFile({ action, file, message })
-			},
+			}
 		})
-	}
-	else {
+	} else {
 		_openFile({ action, file, message })
 	}
 }
@@ -395,8 +340,7 @@ function _openFile(event: RoomOpenFileEvent) {
 	if (props.mediaPreviewEnabled && action === 'preview') {
 		previewFile.value = file
 		showMediaPreview.value = true
-	}
-	else {
+	} else {
 		emit('open-file', event)
 	}
 }
@@ -408,27 +352,27 @@ function openUserTag(user: RoomUser | undefined) {
 function openFailedMessage({ message }: { message: Message }) {
 	emit('open-failed-message', {
 		message,
-		roomId: (room.value as RoomType).roomId,
+		roomId: (room.value as RoomType).roomId
 	})
 }
 
 function menuActionHandler(action: CustomAction) {
 	emit('menu-action-handler', {
 		action,
-		roomId: (room.value as RoomType).roomId,
+		roomId: (room.value as RoomType).roomId
 	})
 }
 
 function roomActionHandler({ action, roomId }: RoomActionHandlerEvent) {
 	emit('room-action-handler', {
 		action,
-		roomId,
+		roomId
 	})
 }
 
 function messageActionHandler({
 	action,
-	message,
+	message
 }: {
 	action: MessageAction
 	message: Message
@@ -436,13 +380,13 @@ function messageActionHandler({
 	emit('message-action-handler', {
 		action,
 		message,
-		roomId: (room.value as RoomType).roomId,
+		roomId: (room.value as RoomType).roomId
 	})
 }
 
 function messageSelectionActionHandler({
 	action,
-	messages,
+	messages
 }: {
 	action: CustomAction
 	messages: Message[]
@@ -450,30 +394,30 @@ function messageSelectionActionHandler({
 	emit('message-selection-action-handler', {
 		action,
 		messages,
-		roomId: (room.value as RoomType).roomId,
+		roomId: (room.value as RoomType).roomId
 	})
 }
 
 function sendMessageReaction(
-	messageReaction: Omit<SendMessageReactionEvent, 'roomId'>,
+	messageReaction: Omit<SendMessageReactionEvent, 'roomId'>
 ) {
 	emit('send-message-reaction', {
 		...messageReaction,
-		roomId: (room.value as RoomType).roomId,
+		roomId: (room.value as RoomType).roomId
 	})
 }
 
 function typingMessage(message: string | null) {
 	emit('typing-message', {
 		message,
-		roomId: (room.value as RoomType).roomId,
+		roomId: (room.value as RoomType).roomId
 	})
 }
 
 function textareaActionHandler(message: string) {
 	emit('textarea-action-handler', {
 		message,
-		roomId: (room.value as RoomType).roomId,
+		roomId: (room.value as RoomType).roomId
 	})
 }
 </script>
@@ -490,7 +434,7 @@ function textareaActionHandler(message: string) {
 				:room="room"
 				:room-actions="roomActions!"
 				:custom-search-room-enabled="customSearchRoomEnabled!"
-				:text-messages="t"
+				:i18n="t"
 				:show-search="showSearch!"
 				:show-add-room="showAddRoom!"
 				:show-rooms-list="showRoomsList && roomsListOpened!"
@@ -530,7 +474,7 @@ function textareaActionHandler(message: string) {
 				:show-new-messages-divider="showNewMessagesDivider!"
 				:show-footer="showFooter!"
 				:show-room-header="showRoomHeader"
-				:text-messages="t"
+				:i18n="t"
 				:single-room="singleRoom!"
 				:show-rooms-list="showRoomsList && roomsListOpened!"
 				:text-formatting="textFormatting!"

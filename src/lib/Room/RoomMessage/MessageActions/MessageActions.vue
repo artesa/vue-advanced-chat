@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import type { Message, MessageAction, MessageReactions } from '@/types'
+import type { I18n, Message, MessageAction, MessageReactions } from '@/types'
 
 import { computed, ref, useTemplateRef, watch } from 'vue'
 import EmojiPickerContainer from '@/components/EmojiPickerContainer/EmojiPickerContainer.vue'
 import SvgIcon from '@/components/SvgIcon/SvgIcon.vue'
 import { findParentBySelector } from '@/utils/element-selector'
 
-import vClickOutside from '@/utils/on-click-outside'
+import { vOnClickOutside } from '@vueuse/components'
 
 const props = withDefaults(defineProps<{
 	currentUserId: string | number
@@ -18,6 +18,7 @@ const props = withDefaults(defineProps<{
 	hoverAudioProgress: boolean
 	emojiDataSource?: string
 	teleportTarget?: HTMLElement
+  i18n: I18n
 }>(), {
 	hoverMessageId: null,
 	emojiDataSource: undefined,
@@ -187,6 +188,7 @@ function sendMessageReaction(emoji: { unicode: string }): void {
 							:emoji-opened="emojiOpened"
 							:style="{ right: isMessageActions ? '30px' : '5px' }"
 							:emoji-reaction="true"
+              :i18n="i18n"
 							:position-right="message.senderId === currentUserId"
 							:message-id="message._id"
 							:emoji-data-source="emojiDataSource"
@@ -214,7 +216,7 @@ function sendMessageReaction(emoji: { unicode: string }): void {
 			<div
 				v-if="optionsOpened"
 				ref="menuOptions"
-				v-click-outside="closeOptions"
+				v-on-click-outside="closeOptions"
 				class="vac-menu-options"
 				:class="{
 					'vac-menu-left': message.senderId !== currentUserId,

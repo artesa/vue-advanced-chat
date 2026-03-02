@@ -1,16 +1,16 @@
 <script setup lang="ts">
-import type { CustomAction, Room, TextMessages } from '@/types'
+import type { CustomAction, Room, I18n } from '@/types'
 
 import { computed, ref, watch } from 'vue'
 
 import SvgIcon from '@/components/SvgIcon/SvgIcon.vue'
-import vClickOutside from '@/utils/on-click-outside'
+import { vOnClickOutside } from '@vueuse/components'
 
 import typingText from '@/utils/typing-text'
 
 const props = defineProps<{
 	currentUserId: string | number
-	textMessages: TextMessages
+	i18n: I18n
 	singleRoom: boolean
 	showRoomsList: boolean
 	isMobile: boolean
@@ -34,40 +34,39 @@ const menuOpened = ref(false)
 const messageSelectionAnimationEnded = ref(true)
 
 const typingUsers = computed(() => {
-	return typingText(props.room, String(props.currentUserId), props.textMessages)
+	return typingText(props.room, String(props.currentUserId), props.i18n)
 })
 
 const userStatus = computed(() => {
-	if (!props.room.users || props.room.users.length !== 2)
-		return
+	if (!props.room.users || props.room.users.length !== 2) return
 
 	const user = props.room.users.find(u => u._id !== props.currentUserId)
 
-	if (!user?.status)
-		return
+	if (!user?.status) return
 
 	let text = ''
 
 	if (user.status.state === 'online') {
-		text = props.textMessages.IS_ONLINE
-	}
-	else if (user.status.lastChanged) {
-		text = props.textMessages.LAST_SEEN + user.status.lastChanged
+		text = props.i18n.isOnline
+	} else if (user.status.lastChanged) {
+		text = props.i18n.lastSeen + user.status.lastChanged
 	}
 
 	return text
 })
 
-watch(() => props.messageSelectionEnabled, (val) => {
-	if (val) {
-		messageSelectionAnimationEnded.value = false
+watch(
+	() => props.messageSelectionEnabled,
+	val => {
+		if (val) {
+			messageSelectionAnimationEnded.value = false
+		} else {
+			setTimeout(() => {
+				messageSelectionAnimationEnded.value = true
+			}, 300)
+		}
 	}
-	else {
-		setTimeout(() => {
-			messageSelectionAnimationEnded.value = true
-		}, 300)
-	}
-})
+)
 
 function menuActionHandler(action: CustomAction): void {
 	closeMenu()
@@ -108,7 +107,7 @@ function messageSelectionActionHandler(action: CustomAction): void {
 							class="vac-selection-cancel vac-item-clickable"
 							@click="$emit('cancel-message-selection')"
 						>
-							{{ textMessages.CANCEL_SELECT_MESSAGE }}
+							{{ i18n.cancelSelectMessage }}
 						</div>
 					</div>
 				</transition>
@@ -120,7 +119,7 @@ function messageSelectionActionHandler(action: CustomAction): void {
 						class="vac-svg-button vac-toggle-button"
 						:class="{
 							'vac-rotate-icon-init': !isMobile,
-							'vac-rotate-icon': !showRoomsList && !isMobile,
+							'vac-rotate-icon': !showRoomsList && !isMobile
 						}"
 						@click="$emit('toggle-rooms-list')"
 					>
@@ -167,7 +166,7 @@ function messageSelectionActionHandler(action: CustomAction): void {
 						<transition v-if="menuActions.length" name="vac-slide-left">
 							<div
 								v-if="menuOpened"
-								v-click-outside="closeMenu"
+								v-on-click-outside="closeMenu"
 								class="vac-menu-options"
 							>
 								<div class="vac-menu-list">

@@ -17,7 +17,7 @@ import type {
 	StringNumber,
 	TemplateText,
 	TextFormatting,
-	TextMessages,
+	I18n,
 	UsernameOptions
 } from '@/types'
 
@@ -33,7 +33,7 @@ import RoomMessage from './RoomMessage/RoomMessage.vue'
 const props = withDefaults(
 	defineProps<{
 		currentUserId: StringNumber
-		textMessages: TextMessages
+		i18n: I18n
 		singleRoom: boolean
 		showRoomsList: boolean
 		isMobile: boolean
@@ -484,14 +484,14 @@ function onDropFiles(event: DragEvent) {
 	>
 		<slot v-if="showNoRoom" name="no-room-selected">
 			<div class="vac-container-center vac-room-empty">
-				<div>{{ textMessages.ROOM_EMPTY }}</div>
+				<div>{{ i18n.roomEmpty }}</div>
 			</div>
 		</slot>
 
 		<RoomHeader
 			v-else-if="showRoomHeader"
 			:current-user-id="currentUserId"
-			:text-messages="textMessages"
+			:i18n="i18n"
 			:single-room="singleRoom"
 			:show-rooms-list="showRoomsList"
 			:is-mobile="isMobile"
@@ -530,11 +530,11 @@ function onDropFiles(event: DragEvent) {
 						<div>
 							<div v-if="showNoMessages" class="vac-text-started">
 								<slot name="messages-empty">
-									{{ textMessages.MESSAGES_EMPTY }}
+									{{ i18n.messagesEmpty }}
 								</slot>
 							</div>
 							<div v-if="showMessagesStarted" class="vac-text-started">
-								{{ textMessages.CONVERSATION_STARTED }} {{ messages[0].date }}
+								{{ i18n.conversationStarted }} {{ messages[0].date }}
 							</div>
 						</div>
 					</transition>
@@ -558,7 +558,7 @@ function onDropFiles(event: DragEvent) {
 								:edited-message-id="editedMessageId"
 								:message-actions="messageActions"
 								:room-users="(room as any).users"
-								:text-messages="textMessages"
+								:i18n="i18n"
 								:new-messages="newMessages"
 								:show-reaction-emojis="showReactionEmojis"
 								:show-new-messages-divider="showNewMessagesDivider"
@@ -608,7 +608,7 @@ function onDropFiles(event: DragEvent) {
 			:room="room as any"
 			:room-id="roomId"
 			:room-message="roomMessage"
-			:text-messages="textMessages"
+			:i18n="i18n"
 			:show-send-icon="showSendIcon"
 			:show-files="showFiles"
 			:show-audio="showAudio"

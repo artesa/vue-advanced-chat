@@ -4,7 +4,7 @@ import type {
 	RoomUser,
 	StringNumber,
 	TextFormatting,
-	TextMessages
+	I18n
 } from '@/types'
 
 import { computed } from 'vue'
@@ -35,7 +35,7 @@ const props = withDefaults(
 		singleLine?: boolean
 		reply?: boolean
 		textFormatting: TextFormatting
-		textMessages?: TextMessages
+		i18n?: I18n
 		linkOptions: LinkOptions
 	}>(),
 	{
@@ -47,7 +47,7 @@ const props = withDefaults(
 		linkify: true,
 		singleLine: false,
 		reply: false,
-		textMessages: () => ({}) as TextMessages
+    i18n: undefined,
 	}
 )
 
@@ -99,7 +99,7 @@ function openTag(event: MouseEvent): void {
 
 const parsedMessage = computed<ParsedMessage[]>(() => {
 	if (props.deleted) {
-		return [{ value: props.textMessages.MESSAGE_DELETED as string }]
+		return [{ value: props.i18n?.messageDeleted as string }]
 	}
 
 	let options: { textFormatting?: Record<string, unknown> }
@@ -174,7 +174,7 @@ const parsedMessage = computed<ParsedMessage[]>(() => {
 								:class="{ 'vac-icon-deleted-room': roomList }"
 							/>
 						</slot>
-						{{ textMessages.MESSAGE_DELETED }}
+						{{ i18n?.messageDeleted }}
 					</template>
 					<template v-else-if="message.url && message.image">
 						<div class="vac-image-link-container">

@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import type {
 	CustomAction,
+	I18n,
 	LinkOptions,
 	Room,
 	StringNumber,
-	TextFormatting,
-	TextMessages,
+	TextFormatting
 } from '@/types'
 
 import { ref, useTemplateRef, watch } from 'vue'
@@ -19,7 +19,7 @@ import RoomsSearch from './RoomsSearch/RoomsSearch.vue'
 const props = withDefaults(
 	defineProps<{
 		currentUserId: StringNumber
-		textMessages: TextMessages
+		i18n: I18n
 		showRoomsList: boolean
 		showSearch: boolean
 		showAddRoom: boolean
@@ -35,14 +35,14 @@ const props = withDefaults(
 		scrollDistance: number
 	}>(),
 	{
-		customSearchRoomEnabled: false,
-	},
+		customSearchRoomEnabled: false
+	}
 )
 
 const emit = defineEmits<{
 	'add-room': []
 	'search-room': [value: string]
-	'room-action-handler': [value: { action: CustomAction, roomId: StringNumber }]
+	'room-action-handler': [value: { action: CustomAction; roomId: StringNumber }]
 	'loading-more-rooms': [value: boolean]
 	'fetch-room': [value: { room: Room }]
 	'fetch-more-rooms': []
@@ -64,25 +64,25 @@ watch(
 			loadingMoreRooms.value = false
 		}
 	},
-	{ deep: true },
+	{ deep: true }
 )
 
 watch(
 	() => props.loadingRooms,
-	(val) => {
+	val => {
 		if (!val) {
 			setTimeout(() => initIntersectionObserver())
 		}
-	},
+	}
 )
 
-watch(loadingMoreRooms, (val) => {
+watch(loadingMoreRooms, val => {
 	emit('loading-more-rooms', val)
 })
 
 watch(
 	() => props.roomsLoaded,
-	(val) => {
+	val => {
 		if (val) {
 			loadingMoreRooms.value = false
 			if (!props.loadingRooms) {
@@ -90,16 +90,16 @@ watch(
 			}
 		}
 	},
-	{ immediate: true },
+	{ immediate: true }
 )
 
 watch(
 	() => props.room,
-	(val) => {
+	val => {
 		if (val && !props.isMobile && 'roomId' in val)
 			selectedRoomId.value = val.roomId
 	},
-	{ immediate: true },
+	{ immediate: true }
 )
 
 function initIntersectionObserver() {
@@ -114,10 +114,10 @@ function initIntersectionObserver() {
 		const options = {
 			root: root.value?.querySelector('#rooms-list'),
 			rootMargin: `${props.scrollDistance}px`,
-			threshold: 0,
+			threshold: 0
 		}
 
-		observer.value = new IntersectionObserver((entries) => {
+		observer.value = new IntersectionObserver(entries => {
 			if (entries[0].isIntersecting) {
 				loadMoreRooms()
 			}
@@ -130,27 +130,23 @@ function initIntersectionObserver() {
 function searchRoom(ev: Event) {
 	if (props.customSearchRoomEnabled) {
 		emit('search-room', (ev.target as HTMLInputElement).value)
-	}
-	else {
+	} else {
 		filteredRooms.value = filteredItems(
 			props.rooms,
 			'roomName',
-			(ev.target as HTMLInputElement).value,
+			(ev.target as HTMLInputElement).value
 		)
 	}
 }
 
 function openRoom(room: Room) {
-	if (room.roomId === (props.room as Room).roomId && !props.isMobile)
-		return
-	if (!props.isMobile)
-		selectedRoomId.value = room.roomId
+	if (room.roomId === (props.room as Room).roomId && !props.isMobile) return
+	if (!props.isMobile) selectedRoomId.value = room.roomId
 	emit('fetch-room', { room })
 }
 
 function loadMoreRooms() {
-	if (loadingMoreRooms.value)
-		return
+	if (loadingMoreRooms.value) return
 
 	if (props.roomsLoaded) {
 		loadingMoreRooms.value = false
@@ -170,7 +166,7 @@ function loadMoreRooms() {
 		class="vac-rooms-container"
 		:class="{
 			'vac-rooms-container-full': isMobile,
-			'vac-app-border-r': !isMobile,
+			'vac-app-border-r': !isMobile
 		}"
 	>
 		<slot name="rooms-header" />
@@ -179,7 +175,7 @@ function loadMoreRooms() {
 			<RoomsSearch
 				:rooms="rooms"
 				:loading-rooms="loadingRooms"
-				:text-messages="textMessages"
+				:i18n="i18n"
 				:show-search="showSearch"
 				:show-add-room="showAddRoom"
 				@search-room="searchRoom"
@@ -199,7 +195,7 @@ function loadMoreRooms() {
 
 		<div v-if="!loadingRooms && !rooms.length" class="vac-rooms-empty">
 			<slot name="rooms-empty">
-				{{ textMessages.ROOMS_EMPTY }}
+				{{ i18n.roomsEmpty }}
 			</slot>
 		</div>
 
@@ -217,7 +213,7 @@ function loadMoreRooms() {
 					:room="fRoom"
 					:text-formatting="textFormatting"
 					:link-options="linkOptions"
-					:text-messages="textMessages"
+					:i18n="i18n"
 					:room-actions="roomActions"
 					@room-action-handler="emit('room-action-handler', $event)"
 				>
