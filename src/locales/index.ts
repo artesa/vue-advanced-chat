@@ -1,3 +1,5 @@
+import type { TextMessages } from '@/types'
+
 export default {
 	ROOMS_EMPTY: 'No rooms',
 	ROOM_EMPTY: 'No room selected',
@@ -11,4 +13,4 @@ export default {
 	LAST_SEEN: 'last seen ',
 	IS_TYPING: 'is writing...',
 	CANCEL_SELECT_MESSAGE: 'Cancel',
-}
+} satisfies TextMessages

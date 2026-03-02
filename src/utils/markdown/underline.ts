@@ -1,7 +1,7 @@
 import { codes } from './constants'
 
-function underlineTokenize(effects, ok, nok) {
-	const inside = (code) => {
+function underlineTokenize(effects: any, ok: any, nok: any) {
+	const inside = (code: number | null): any => {
 		if (
 			code === codes.carriageReturn
 			|| code === codes.lineFeed
@@ -14,6 +14,7 @@ function underlineTokenize(effects, ok, nok) {
 		if (code === codes.backslash) {
 			effects.consume(code)
 
+			// eslint-disable-next-line ts/no-use-before-define
 			return insideEscape
 		}
 
@@ -32,7 +33,7 @@ function underlineTokenize(effects, ok, nok) {
 		return inside
 	}
 
-	const insideEscape = (code) => {
+	const insideEscape = (code: number | null): any => {
 		if (code === codes.backslash || code === codes.degree) {
 			effects.consume(code)
 
@@ -42,9 +43,9 @@ function underlineTokenize(effects, ok, nok) {
 		return inside(code)
 	}
 
-	const begin = code => (code === codes.degree ? nok(code) : inside(code))
+	const begin = (code: number | null): any => (code === codes.degree ? nok(code) : inside(code))
 
-	return (code) => {
+	return (code: number | null): any => {
 		effects.enter('underline')
 		effects.enter('underlineMarker')
 		effects.consume(code)
@@ -61,12 +62,12 @@ export const underline = { text: { 176: underlineConstruct } } // 176 is the deg
 
 export const underlineHtml = {
 	enter: {
-		underline() {
+		underline(this: any) {
 			this.tag('<u>')
 		},
 	},
 	exit: {
-		underline() {
+		underline(this: any) {
 			this.tag('</u>')
 		},
 	},

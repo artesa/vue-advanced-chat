@@ -7,7 +7,7 @@
 		"email": "antoindupontdev@gmail.com",
 		"name": "Antoine Dupont"
 	},
-	"types": "./types/index.d.ts",
+	"types": "./dist/index.d.ts",
 	"keywords": [
 		"vue",
 		"vuejs",
@@ -27,30 +27,35 @@
 	},
 	"homepage": "https://github.com/artesa/vue-advanced-chat#readme",
 	"type": "module",
+	"main": "./dist/vue-advanced-chat.js",
 	"module": "./dist/vue-advanced-chat.js",
 	"exports": {
 		".": {
-			"types": "./types/index.d.ts",
+			"types": "./dist/index.d.ts",
 			"import": "./dist/vue-advanced-chat.js"
+		},
+		"./ce": {
+			"types": "./dist/ce/index.ce.d.ts",
+			"import": "./dist/ce/vue-advanced-chat.js"
 		},
 		"./dist/style.css": "./dist/style.css"
 	},
 	"packageManager": "pnpm@9.15.9",
 	"scripts": {
 		"dev": "vite",
-		"build": "vite build",
+		"build": "vite build && vite build --config vite.config.ce.js",
 		"serve": "vite preview",
-		"clean:lib": "rm -rf dist/*.js && rm -rf dist/*.map && rm -rf dist/*.css && rm -rf dist/*.html",
+		"clean:lib": "rm -rf dist/*.js && rm -rf dist/*.map && rm -rf dist/*.css && rm -rf dist/*.html && rm -rf dist/ce",
 		"prepublish": "npm run lint && npm run build",
 		"version": "npm run build",
-		"lint": "eslint --fix src",
+		"typecheck": "vue-tsc --noEmit",
+		"lint": "eslint",
 		"reset": "rm -rf node_modules && rm -rf package-lock.json && npm i",
 		"reset-all": "cd demo && npm run reset-all",
 		"pull-master": "git pull origin master --no-edit --no-ff"
 	},
 	"files": [
-		"dist/*",
-		"types/*"
+		"dist/*"
 	],
 	"devDependencies": {
 		"@antfu/eslint-config": "^4.13.2",
@@ -59,15 +64,17 @@
 		"sass": "1.97.3",
 		"typescript": "5.9.3",
 		"vite": "^7.3.1",
-		"vue": "^3.5.29"
+		"vite-plugin-dts": "^4.5.4",
+		"vue": "^3.5.29",
+		"vue-tsc": "^3.2.5"
 	},
 	"peerDependencies": {
 		"vue": "^3.5.0"
 	},
 	"dependencies": {
-		"@vueuse/components": "^12.8.2",
-		"@vueuse/core": "^12.8.2",
-		"emoji-picker-element": "1.12.1",
+		"@vueuse/components": "^14.2.1",
+		"@vueuse/core": "^14.2.1",
+		"emoji-picker-element": "1.29.1",
 		"micromark": "^3.1.0",
 		"micromark-extension-gfm": "^2.0.1"
 	}

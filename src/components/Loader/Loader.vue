@@ -1,14 +1,14 @@
-<script>
-export default {
-	name: 'AppLoader',
-
-	props: {
-		show: { type: Boolean, default: false },
-		infinite: { type: Boolean, default: false },
-		type: { type: String, required: true },
-		messageId: { type: String, default: '' },
-	},
-}
+<script setup lang="ts">
+withDefaults(defineProps<{
+	show?: boolean
+	infinite?: boolean
+	type: string
+	messageId?: string
+}>(), {
+	show: false,
+	infinite: false,
+	messageId: '',
+})
 </script>
 
 <template>

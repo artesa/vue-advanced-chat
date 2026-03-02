@@ -1,8 +1,8 @@
-const zeroPad = (num, pad) => {
+function zeroPad(num, pad) {
 	return String(num).padStart(pad, '0')
 }
 
-const isSameDay = (d1, d2) => {
+function isSameDay(d1, d2) {
 	return (
 		d1.getFullYear() === d2.getFullYear() &&
 		d1.getMonth() === d2.getMonth() &&
@@ -10,7 +10,7 @@ const isSameDay = (d1, d2) => {
 	)
 }
 
-export const parseTimestamp = (timestamp, format = '') => {
+export function parseTimestamp(timestamp, format = '') {
 	if (!timestamp) return
 
 	const date = timestamp.seconds
@@ -35,7 +35,7 @@ export const parseTimestamp = (timestamp, format = '') => {
 	return date
 }
 
-export const formatTimestamp = (date, timestamp) => {
+export function formatTimestamp(date, timestamp) {
 	const timestampFormat = isSameDay(date, new Date()) ? 'HH:mm' : 'DD/MM/YY'
 	const result = parseTimestamp(timestamp, timestampFormat)
 	return timestampFormat === 'HH:mm' ? `Today, ${result}` : result

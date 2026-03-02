@@ -1,30 +1,20 @@
-<script>
-export default {
-	name: 'ProgressBar',
+<script setup lang="ts">
+import { computed } from 'vue'
 
-	props: {
-		progress: { type: Number, default: 0 },
-	},
+const props = withDefaults(defineProps<{
+	progress?: number
+}>(), {
+	progress: 0,
+})
 
-	data() {
-		const radius = 35
-		const stroke = 4
-		const normalizedRadius = radius - stroke * 2
-		const circumference = normalizedRadius * 2 * Math.PI
+const radius = 35
+const stroke = 4
+const normalizedRadius = radius - stroke * 2
+const circumference = normalizedRadius * 2 * Math.PI
 
-		return {
-			radius,
-			stroke,
-			normalizedRadius,
-			circumference,
-		}
-	},
-	computed: {
-		strokeDashoffset() {
-			return this.circumference - (this.progress / 100) * this.circumference
-		},
-	},
-}
+const strokeDashoffset = computed(() => {
+	return circumference - (props.progress / 100) * circumference
+})
 </script>
 
 <template>

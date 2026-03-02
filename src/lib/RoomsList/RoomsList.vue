@@ -1,158 +1,147 @@
-<script>
-import Loader from '../../components/Loader/Loader'
+<script setup lang="ts">
+import type { CustomAction, LinkOptions, Room, StringNumber, TextFormatting, TextMessages } from '@/types'
 
-import filteredItems from '../../utils/filter-items'
-import RoomContent from './RoomContent/RoomContent'
+import { ref, useTemplateRef, watch } from 'vue'
+import Loader from '@/components/Loader/Loader.vue'
 
-import RoomsSearch from './RoomsSearch/RoomsSearch'
+import filteredItems from '@/utils/filter-items'
 
-export default {
-	name: 'RoomsList',
-	components: {
-		Loader,
-		RoomsSearch,
-		RoomContent,
-	},
+import RoomContent from './RoomContent/RoomContent.vue'
+import RoomsSearch from './RoomsSearch/RoomsSearch.vue'
 
-	props: {
-		currentUserId: { type: [String, Number], required: true },
-		textMessages: { type: Object, required: true },
-		showRoomsList: { type: Boolean, required: true },
-		showSearch: { type: Boolean, required: true },
-		showAddRoom: { type: Boolean, required: true },
-		textFormatting: { type: Object, required: true },
-		linkOptions: { type: Object, required: true },
-		isMobile: { type: Boolean, required: true },
-		rooms: { type: Array, required: true },
-		loadingRooms: { type: Boolean, required: true },
-		roomsLoaded: { type: Boolean, required: true },
-		room: { type: Object, required: true },
-		customSearchRoomEnabled: { type: [Boolean, String], default: false },
-		roomActions: { type: Array, required: true },
-		scrollDistance: { type: Number, required: true },
-	},
+const props = withDefaults(defineProps<{
+	currentUserId: StringNumber
+	textMessages: TextMessages
+	showRoomsList: boolean
+	showSearch: boolean
+	showAddRoom: boolean
+	textFormatting: TextFormatting
+	linkOptions: LinkOptions
+	isMobile: boolean
+	rooms: Room[]
+	loadingRooms: boolean
+	roomsLoaded: boolean
+	room: Room | Record<string, never>
+	customSearchRoomEnabled: boolean
+	roomActions: CustomAction[]
+	scrollDistance: number
+}>(), {
+	customSearchRoomEnabled: false,
+})
 
-	emits: [
-		'add-room',
-		'search-room',
-		'room-action-handler',
-		'loading-more-rooms',
-		'fetch-room',
-		'fetch-more-rooms',
-	],
+const emit = defineEmits<{
+	'add-room': []
+	'search-room': [value: string]
+	'room-action-handler': [value: unknown]
+	'loading-more-rooms': [value: boolean]
+	'fetch-room': [value: { room: Room }]
+	'fetch-more-rooms': []
+}>()
 
-	data() {
-		return {
-			filteredRooms: this.rooms || [],
-			observer: null,
-			showLoader: true,
-			loadingMoreRooms: false,
-			selectedRoomId: '',
+const root = useTemplateRef<HTMLElement>('root')
+
+const filteredRooms = ref<Room[]>(props.rooms || [])
+const observer = ref<IntersectionObserver | null>(null)
+const showLoader = ref(true)
+const loadingMoreRooms = ref(false)
+const selectedRoomId = ref('')
+
+watch(() => props.rooms, (newVal, oldVal) => {
+	filteredRooms.value = newVal
+	if (newVal.length !== oldVal.length || props.roomsLoaded) {
+		loadingMoreRooms.value = false
+	}
+}, { deep: true })
+
+watch(() => props.loadingRooms, (val) => {
+	if (!val) {
+		setTimeout(() => initIntersectionObserver())
+	}
+})
+
+watch(loadingMoreRooms, (val) => {
+	emit('loading-more-rooms', val)
+})
+
+watch(() => props.roomsLoaded, (val) => {
+	if (val) {
+		loadingMoreRooms.value = false
+		if (!props.loadingRooms) {
+			showLoader.value = false
 		}
-	},
+	}
+}, { immediate: true })
 
-	watch: {
-		rooms: {
-			deep: true,
-			handler(newVal, oldVal) {
-				this.filteredRooms = newVal
-				if (newVal.length !== oldVal.length || this.roomsLoaded) {
-					this.loadingMoreRooms = false
-				}
-			},
-		},
-		loadingRooms(val) {
-			if (!val) {
-				setTimeout(() => this.initIntersectionObserver())
+watch(() => props.room, (val) => {
+	if (val && !props.isMobile && 'roomId' in val)
+		selectedRoomId.value = val.roomId
+}, { immediate: true })
+
+function initIntersectionObserver() {
+	if (observer.value) {
+		showLoader.value = true
+		observer.value.disconnect()
+	}
+
+	const loader = root.value?.querySelector('#infinite-loader-rooms')
+
+	if (loader) {
+		const options = {
+			root: root.value?.querySelector('#rooms-list'),
+			rootMargin: `${props.scrollDistance}px`,
+			threshold: 0,
+		}
+
+		observer.value = new IntersectionObserver((entries) => {
+			if (entries[0].isIntersecting) {
+				loadMoreRooms()
 			}
-		},
-		loadingMoreRooms(val) {
-			this.$emit('loading-more-rooms', val)
-		},
-		roomsLoaded: {
-			immediate: true,
-			handler(val) {
-				if (val) {
-					this.loadingMoreRooms = false
-					if (!this.loadingRooms) {
-						this.showLoader = false
-					}
-				}
-			},
-		},
-		room: {
-			immediate: true,
-			handler(val) {
-				if (val && !this.isMobile)
-					this.selectedRoomId = val.roomId
-			},
-		},
-	},
+		}, options)
 
-	methods: {
-		initIntersectionObserver() {
-			if (this.observer) {
-				this.showLoader = true
-				this.observer.disconnect()
-			}
+		observer.value.observe(loader)
+	}
+}
 
-			const loader = this.$el.querySelector('#infinite-loader-rooms')
+function searchRoom(ev: Event) {
+	if (props.customSearchRoomEnabled) {
+		emit('search-room', (ev.target as HTMLInputElement).value)
+	}
+	else {
+		filteredRooms.value = filteredItems(
+			props.rooms,
+			'roomName',
+			(ev.target as HTMLInputElement).value,
+		)
+	}
+}
 
-			if (loader) {
-				const options = {
-					root: this.$el.querySelector('#rooms-list'),
-					rootMargin: `${this.scrollDistance}px`,
-					threshold: 0,
-				}
+function openRoom(room: Room) {
+	if (room.roomId === (props.room as Room).roomId && !props.isMobile)
+		return
+	if (!props.isMobile)
+		selectedRoomId.value = room.roomId
+	emit('fetch-room', { room })
+}
 
-				this.observer = new IntersectionObserver((entries) => {
-					if (entries[0].isIntersecting) {
-						this.loadMoreRooms()
-					}
-				}, options)
+function loadMoreRooms() {
+	if (loadingMoreRooms.value)
+		return
 
-				this.observer.observe(loader)
-			}
-		},
-		searchRoom(ev) {
-			if (this.customSearchRoomEnabled) {
-				this.$emit('search-room', ev.target.value)
-			}
-			else {
-				this.filteredRooms = filteredItems(
-					this.rooms,
-					'roomName',
-					ev.target.value,
-				)
-			}
-		},
-		openRoom(room) {
-			if (room.roomId === this.room.roomId && !this.isMobile)
-				return
-			if (!this.isMobile)
-				this.selectedRoomId = room.roomId
-			this.$emit('fetch-room', { room })
-		},
-		loadMoreRooms() {
-			if (this.loadingMoreRooms)
-				return
+	if (props.roomsLoaded) {
+		loadingMoreRooms.value = false
+		showLoader.value = false
+		return
+	}
 
-			if (this.roomsLoaded) {
-				this.loadingMoreRooms = false
-				this.showLoader = false
-				return
-			}
-
-			this.$emit('fetch-more-rooms')
-			this.loadingMoreRooms = true
-		},
-	},
+	emit('fetch-more-rooms')
+	loadingMoreRooms.value = true
 }
 </script>
 
 <template>
 	<div
 		v-show="showRoomsList"
+		ref="root"
 		class="vac-rooms-container"
 		:class="{
 			'vac-rooms-container-full': isMobile,
@@ -169,7 +158,7 @@ export default {
 				:show-search="showSearch"
 				:show-add-room="showAddRoom"
 				@search-room="searchRoom"
-				@add-room="$emit('add-room')"
+				@add-room="emit('add-room')"
 			>
 				<template v-for="(idx, name) in $slots" #[name]="data">
 					<slot :name="name" v-bind="data" />
@@ -205,7 +194,7 @@ export default {
 					:link-options="linkOptions"
 					:text-messages="textMessages"
 					:room-actions="roomActions"
-					@room-action-handler="$emit('room-action-handler', $event)"
+					@room-action-handler="emit('room-action-handler', $event)"
 				>
 					<template v-for="(idx, name) in $slots" #[name]="data">
 						<slot :name="name" v-bind="data" />

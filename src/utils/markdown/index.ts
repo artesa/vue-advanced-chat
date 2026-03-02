@@ -1,11 +1,28 @@
+import type { RoomUser } from '@/types'
 import { micromark } from 'micromark'
 import { gfm, gfmHtml } from 'micromark-extension-gfm'
 import { underline, underlineHtml } from './underline'
 import { usertag, usertagHtml } from './usertag'
 
-export default (text, { textFormatting }) => {
+interface TextFormattingOptions {
+	linkify?: boolean
+	singleLine?: boolean
+	users?: RoomUser[]
+	[key: string]: unknown
+}
+
+interface MarkdownOptions {
+	textFormatting?: TextFormattingOptions
+}
+
+interface MarkdownToken {
+	types: string[]
+	value: string
+}
+
+export default (text: string, { textFormatting }: MarkdownOptions): MarkdownToken[] => {
 	if (textFormatting) {
-		let gfmDisabled = []
+		let gfmDisabled: string[] = []
 
 		if (!textFormatting.linkify) {
 			gfmDisabled = ['literalAutolink', 'literalAutolinkEmail']
@@ -25,9 +42,9 @@ export default (text, { textFormatting }) => {
 				htmlExtensions: [
 					gfmHtml(),
 					underlineHtml,
-					usertagHtml(textFormatting.users),
+					usertagHtml(textFormatting.users || []),
 				],
-			},
+			} as any,
 		)
 
 		if (textFormatting.singleLine) {
@@ -38,7 +55,7 @@ export default (text, { textFormatting }) => {
 			return [
 				{
 					types: [],
-					value: element.innerText,
+					value: element.textContent,
 				},
 			]
 		}

@@ -1,4 +1,6 @@
-export const defaultThemeStyles = {
+import type { ThemeStyles } from '@/types'
+
+export const defaultThemeStyles: Record<string, ThemeStyles> = {
 	light: {
 		general: {
 			color: '#0a0a0a',
@@ -308,7 +310,7 @@ export function cssThemeVars({
 	room,
 	emoji,
 	icons,
-}) {
+}: ThemeStyles): Record<string, string> {
 	return {
 		// general
 		'--chat-color': general.color,

@@ -1,695 +1,725 @@
-<script>
+<script setup lang="ts">
+import type { LinkOptions, Message, MessageFile, Room, StringNumber, TemplateText, TextFormatting, TextMessages } from '@/types'
 import { Database } from 'emoji-picker-element'
 
-import EmojiPickerContainer from '../../../components/EmojiPickerContainer/EmojiPickerContainer'
-import SvgIcon from '../../../components/SvgIcon/SvgIcon'
+import { computed, onBeforeUnmount, onMounted, ref, useTemplateRef, watch } from 'vue'
+import EmojiPickerContainer from '@/components/EmojiPickerContainer/EmojiPickerContainer.vue'
 
-import { detectChrome } from '../../../utils/browser-detection'
-import filteredItems from '../../../utils/filter-items'
-import { detectMobile } from '../../../utils/mobile-detection'
-import vClickOutside from '../../../utils/on-click-outside'
-import Recorder from '../../../utils/recorder'
+import SvgIcon from '@/components/SvgIcon/SvgIcon.vue'
+import { detectChrome } from '@/utils/browser-detection'
+import filteredItems from '@/utils/filter-items'
+import { detectMobile } from '@/utils/mobile-detection'
+import vClickOutside from '@/utils/on-click-outside'
 
-import RoomEmojis from './RoomEmojis/RoomEmojis'
-import RoomFiles from './RoomFiles/RoomFiles'
-import RoomMessageReply from './RoomMessageReply/RoomMessageReply'
+import Recorder from '@/utils/recorder'
 
-import RoomTemplatesText from './RoomTemplatesText/RoomTemplatesText'
-import RoomUsersTag from './RoomUsersTag/RoomUsersTag'
+import RoomEmojis from './RoomEmojis/RoomEmojis.vue'
+import RoomFiles from './RoomFiles/RoomFiles.vue'
+import RoomMessageReply from './RoomMessageReply/RoomMessageReply.vue'
+import RoomTemplatesText from './RoomTemplatesText/RoomTemplatesText.vue'
+import RoomUsersTag from './RoomUsersTag/RoomUsersTag.vue'
 
-export default {
-	name: 'RoomFooter',
+const props = withDefaults(defineProps<{
+	room: Room
+	roomId: StringNumber
+	roomMessage: string | null
+	textFormatting: TextFormatting
+	linkOptions: LinkOptions
+	textMessages: TextMessages
+	showSendIcon: boolean
+	showFiles: boolean
+	showAudio: boolean
+	showEmojis: boolean
+	showFooter: boolean
+	acceptedFiles: string
+	multipleFiles: boolean
+	captureFiles?: string
+	textareaActionEnabled: boolean
+	textareaAutoFocus: boolean
+	userTagsEnabled: boolean
+	emojisSuggestionEnabled: boolean
+	templatesText: TemplateText[] | null
+	audioBitRate: number
+	audioSampleRate: number
+	initReplyMessage: Message | null
+	initEditMessage: Message | null
+	droppedFiles: File[] | null
+	emojiDataSource: string | undefined
+}>(), {
+	roomMessage: null,
+	multipleFiles: true,
+	templatesText: null,
+	initReplyMessage: null,
+	initEditMessage: null,
+	droppedFiles: null,
+	emojiDataSource: undefined,
+})
 
-	components: {
-		SvgIcon,
-		EmojiPickerContainer,
-		RoomFiles,
-		RoomMessageReply,
-		RoomUsersTag,
-		RoomEmojis,
-		RoomTemplatesText,
-	},
+const emit = defineEmits<{
+	'edit-message': [value: unknown]
+	'send-message': [value: unknown]
+	'update-edited-message-id': [value: string | undefined]
+	'textarea-action-handler': [value: string]
+	'typing-message': [value: string | null]
+}>()
 
-	directives: {
-		clickOutside: vClickOutside,
-	},
+const roomTextarea = useTemplateRef<HTMLTextAreaElement>('roomTextarea')
+const fileRef = useTemplateRef<HTMLInputElement>('file')
 
-	props: {
-		room: { type: Object, required: true },
-		roomId: { type: [String, Number], required: true },
-		roomMessage: { type: String, default: null },
-		textFormatting: { type: Object, required: true },
-		linkOptions: { type: Object, required: true },
-		textMessages: { type: Object, required: true },
-		showSendIcon: { type: Boolean, required: true },
-		showFiles: { type: Boolean, required: true },
-		showAudio: { type: Boolean, required: true },
-		showEmojis: { type: Boolean, required: true },
-		showFooter: { type: Boolean, required: true },
-		acceptedFiles: { type: String, required: true },
-		multipleFiles: { type: Boolean, default: true },
-		captureFiles: { type: String, required: true },
-		textareaActionEnabled: { type: Boolean, required: true },
-		textareaAutoFocus: { type: Boolean, required: true },
-		userTagsEnabled: { type: Boolean, required: true },
-		emojisSuggestionEnabled: { type: Boolean, required: true },
-		templatesText: { type: Array, default: null },
-		audioBitRate: { type: Number, required: true },
-		audioSampleRate: { type: Number, required: true },
-		initReplyMessage: { type: Object, default: null },
-		initEditMessage: { type: Object, default: null },
-		droppedFiles: { type: Array, default: null },
-		emojiDataSource: { type: String, default: undefined },
-	},
+const message = ref('')
+const editedMessage = ref<Partial<Message>>({})
+const messageReply = ref<Message | null>(null)
+const cursorRangePosition = ref<number | null>(null)
+const files = ref<Array<MessageFile & { loading?: boolean }>>([])
+const fileDialog = ref(false)
+const selectUsersTagItem = ref<boolean | null>(null)
+const selectEmojiItem = ref<boolean | null>(null)
+const selectTemplatesTextItem = ref<boolean | null>(null)
+const format = ref('mp3')
+const activeUpOrDownEmojis = ref<number | null>(null)
+const activeUpOrDownUsersTag = ref<number | null>(null)
+const activeUpOrDownTemplatesText = ref<number | null>(null)
+const emojisDB = new Database({ dataSource: props.emojiDataSource })
+const emojiOpened = ref(false)
+const keepKeyboardOpen = ref(false)
+const filteredEmojis = ref<string[]>([])
+const filteredUsersTag = ref<any[]>([])
+const selectedUsersTag = ref<any[]>([])
+const filteredTemplatesText = ref<TemplateText[]>([])
+const isRecording = ref(false)
 
-	emits: [
-		'edit-message',
-		'send-message',
-		'update-edited-message-id',
-		'textarea-action-handler',
-		'typing-message',
-	],
+function initRecorder() {
+	isRecording.value = false
 
-	data() {
-		return {
-			message: '',
-			editedMessage: {},
-			messageReply: null,
-			cursorRangePosition: null,
-			files: [],
-			fileDialog: false,
-			selectUsersTagItem: null,
-			selectEmojiItem: null,
-			selectTemplatesTextItem: null,
-			format: 'mp3',
-			activeUpOrDownEmojis: null,
-			activeUpOrDownUsersTag: null,
-			activeUpOrDownTemplatesText: null,
-			emojisDB: new Database({ dataSource: this.emojiDataSource }),
-			emojiOpened: false,
-			keepKeyboardOpen: false,
-			filteredEmojis: [],
-			filteredUsersTag: [],
-			selectedUsersTag: [],
-			filteredTemplatesText: [],
-			recorder: this.initRecorder(),
-			isRecording: false,
+	return new Recorder({
+		bitRate: Number(props.audioBitRate),
+		sampleRate: Number(props.audioSampleRate),
+		beforeRecording: undefined,
+		afterRecording: undefined,
+		pauseRecording: undefined,
+		micFailed,
+	})
+}
+
+const recorder = ref(initRecorder())
+
+function micFailed() {
+	isRecording.value = false
+	recorder.value = initRecorder()
+}
+
+const isMessageEmpty = computed(() => {
+	return !files.value.length && !message.value.trim()
+})
+
+const isFileLoading = computed(() => {
+	return files.value.some(e => e.loading)
+})
+
+const recordedTime = computed(() => {
+	return new Date(recorder.value.duration * 1000).toISOString().substr(14, 5)
+})
+
+const shadowFooter = computed(() => {
+	return (
+		!!filteredEmojis.value.length
+		|| !!filteredUsersTag.value.length
+		|| !!filteredTemplatesText.value.length
+		|| !!files.value.length
+		|| !!messageReply.value
+	)
+})
+
+watch(() => props.roomId, () => {
+	resetMessage(true, true)
+
+	if (props.roomMessage) {
+		message.value = props.roomMessage
+		setTimeout(() => onChangeInput())
+	}
+})
+
+watch(message, (val) => {
+	getTextareaRef()!.value = val
+})
+
+watch(() => props.roomMessage, (val) => {
+	if (val)
+		message.value = props.roomMessage!
+}, { immediate: true })
+
+watch(editedMessage, (val) => {
+	emit('update-edited-message-id', val._id)
+})
+
+watch(() => props.initReplyMessage, (val) => {
+	if (val) {
+		replyMessage(val)
+	}
+})
+
+watch(() => props.initEditMessage, (val) => {
+	if (val) {
+		editMessage(val)
+	}
+})
+
+watch(() => props.droppedFiles, (val) => {
+	if (val) {
+		onFileChange(val)
+	}
+})
+
+onMounted(() => {
+	const isMobile = detectMobile()
+	let isComposed = true
+
+	getTextareaRef()!.addEventListener('keyup', (e: KeyboardEvent) => {
+		if (e.key === 'Enter' && !e.shiftKey && !fileDialog.value) {
+			if (isMobile) {
+				message.value = `${message.value}\n`
+				setTimeout(() => onChangeInput())
+			}
+			else if (
+				isComposed
+				&& !filteredEmojis.value.length
+				&& !filteredUsersTag.value.length
+				&& !filteredTemplatesText.value.length
+			) {
+				sendMessage()
+			}
 		}
-	},
+		isComposed = !e.isComposing
 
-	computed: {
-		isMessageEmpty() {
-			return !this.files.length && !this.message.trim()
-		},
-		isFileLoading() {
-			return this.files.some(e => e.loading)
-		},
-		recordedTime() {
-			return new Date(this.recorder.duration * 1000).toISOString().substr(14, 5)
-		},
-		shadowFooter() {
-			return (
-				!!this.filteredEmojis.length
-				|| !!this.filteredUsersTag.length
-				|| !!this.filteredTemplatesText.length
-				|| !!this.files.length
-				|| !!this.messageReply
+		setTimeout(() => {
+			updateFooterLists()
+		}, 60)
+	})
+
+	getTextareaRef()!.addEventListener('click', () => {
+		if (isMobile)
+			keepKeyboardOpen.value = true
+		updateFooterLists()
+	})
+
+	getTextareaRef()!.addEventListener('blur', () => {
+		setTimeout(() => {
+			resetFooterList()
+		}, 100)
+
+		if (isMobile)
+			setTimeout(() => (keepKeyboardOpen.value = false))
+	})
+})
+
+onBeforeUnmount(() => {
+	stopRecorder()
+})
+
+function getTextareaRef() {
+	return roomTextarea.value
+}
+
+function focusTextarea(disableMobileFocus?: boolean) {
+	if (detectMobile() && disableMobileFocus)
+		return
+	if (!getTextareaRef())
+		return
+	getTextareaRef()!.focus()
+
+	if (cursorRangePosition.value) {
+		setTimeout(() => {
+			const offset = detectChrome() ? 0 : 1
+			getTextareaRef()!.setSelectionRange(
+				cursorRangePosition.value! + offset,
+				cursorRangePosition.value! + offset,
 			)
-		},
-	},
+			cursorRangePosition.value = null
+		})
+	}
+}
 
-	watch: {
-		roomId() {
-			this.resetMessage(true, true)
+function onChangeInput() {
+	if (getTextareaRef()?.value || getTextareaRef()?.value === '') {
+		message.value = getTextareaRef()!.value
+	}
+	keepKeyboardOpen.value = true
+	resizeTextarea()
+	emit('typing-message', message.value)
+}
 
-			if (this.roomMessage) {
-				this.message = this.roomMessage
-				setTimeout(() => this.onChangeInput())
-			}
-		},
-		message(val) {
-			this.getTextareaRef().value = val
-		},
-		roomMessage: {
-			immediate: true,
-			handler(val) {
-				if (val)
-					this.message = this.roomMessage
-			},
-		},
-		editedMessage(val) {
-			this.$emit('update-edited-message-id', val._id)
-		},
-		initReplyMessage(val) {
-			if (val) {
-				this.replyMessage(val)
-			}
-		},
-		initEditMessage(val) {
-			if (val) {
-				this.editMessage(val)
-			}
-		},
-		droppedFiles(val) {
-			if (val) {
-				this.onFileChange(val)
-			}
-		},
-	},
+function resizeTextarea() {
+	const el = getTextareaRef()
 
-	mounted() {
-		const isMobile = detectMobile()
-		let isComposed = true
+	if (!el)
+		return
 
-		this.getTextareaRef().addEventListener('keyup', (e) => {
-			if (e.key === 'Enter' && !e.shiftKey && !this.fileDialog) {
-				if (isMobile) {
-					this.message = `${this.message}\n`
-					setTimeout(() => this.onChangeInput())
-				}
-				else if (
-					isComposed
-					&& !this.filteredEmojis.length
-					&& !this.filteredUsersTag.length
-					&& !this.filteredTemplatesText.length
-				) {
-					this.sendMessage()
-				}
+	const padding = window
+		.getComputedStyle(el, null)
+		.getPropertyValue('padding-top')
+		.replace('px', '')
+
+	el.style.height = '0'
+	el.style.height = `${el.scrollHeight - Number(padding) * 2}px`
+}
+
+function escapeTextarea() {
+	if (filteredEmojis.value.length) {
+		filteredEmojis.value = []
+	}
+	else if (filteredUsersTag.value.length) {
+		filteredUsersTag.value = []
+	}
+	else if (filteredTemplatesText.value.length) {
+		filteredTemplatesText.value = []
+	}
+	else {
+		resetMessage()
+	}
+}
+
+function onPasteImage(pasteEvent: ClipboardEvent) {
+	const items = pasteEvent.clipboardData?.items
+
+	if (items) {
+		Array.from(items).forEach((item) => {
+			if (item.type.includes('image')) {
+				const blob = item.getAsFile()
+				if (blob)
+					onFileChange([blob])
 			}
-			isComposed = !e.isComposing
+		})
+	}
+}
 
-			setTimeout(() => {
-				this.updateFooterLists()
-			}, 60)
+function updateActiveUpOrDown(event: KeyboardEvent, direction: number) {
+	if (filteredEmojis.value.length) {
+		activeUpOrDownEmojis.value = direction
+		event.preventDefault()
+	}
+	else if (filteredUsersTag.value.length) {
+		activeUpOrDownUsersTag.value = direction
+		event.preventDefault()
+	}
+	else if (filteredTemplatesText.value.length) {
+		activeUpOrDownTemplatesText.value = direction
+		event.preventDefault()
+	}
+}
+
+function selectItem() {
+	if (filteredEmojis.value.length) {
+		selectEmojiItem.value = true
+	}
+	else if (filteredUsersTag.value.length) {
+		selectUsersTagItem.value = true
+	}
+	else if (filteredTemplatesText.value.length) {
+		selectTemplatesTextItem.value = true
+	}
+}
+
+function selectEmoji(emoji: string) {
+	selectEmojiItem.value = false
+
+	if (!emoji)
+		return
+
+	const { position, endPosition } = getCharPosition(':')
+
+	message.value
+		= message.value.substr(0, position - 1)
+			+ emoji
+			+ message.value.substr(endPosition, message.value.length - 1)
+
+	cursorRangePosition.value = position
+	focusTextarea()
+}
+
+function selectTemplateText(template: TemplateText) {
+	selectTemplatesTextItem.value = false
+
+	if (!template)
+		return
+
+	const { position, endPosition } = getCharPosition('/')
+
+	const space = message.value.substr(endPosition, endPosition).length
+		? ''
+		: ' '
+
+	message.value
+		= message.value.substr(0, position - 1)
+			+ template.text
+			+ space
+			+ message.value.substr(endPosition, message.value.length - 1)
+
+	cursorRangePosition.value
+		= position + template.text.length + space.length + 1
+
+	focusTextarea()
+}
+
+function addEmoji(emoji: { unicode: string }) {
+	message.value += emoji.unicode
+	focusTextarea(true)
+}
+
+function launchFilePicker() {
+	fileRef.value!.value = ''
+	fileRef.value!.click()
+}
+
+async function onFileChange(inputFiles: FileList | File[]) {
+	fileDialog.value = true
+	focusTextarea()
+
+	Array.from(inputFiles).forEach(async (file) => {
+		const fileURL = URL.createObjectURL(file)
+		const typeIndex = file.name.lastIndexOf('.')
+
+		files.value.push({
+			loading: true,
+			name: file.name.substring(0, typeIndex),
+			size: file.size,
+			type: file.type,
+			extension: file.name.substring(typeIndex + 1),
+			localUrl: fileURL,
+			url: '',
 		})
 
-		this.getTextareaRef().addEventListener('click', () => {
-			if (isMobile)
-				this.keepKeyboardOpen = true
-			this.updateFooterLists()
+		const blobFile = await fetch(fileURL).then(res => res.blob())
+
+		const loadedFile = files.value.find(f => f.localUrl === fileURL)
+
+		if (loadedFile) {
+			loadedFile.blob = blobFile
+			loadedFile.loading = false
+			delete loadedFile.loading
+		}
+	})
+
+	setTimeout(() => (fileDialog.value = false), 500)
+}
+
+function removeFile(index: number) {
+	files.value.splice(index, 1)
+	focusTextarea()
+}
+
+function toggleRecorder(recording: boolean) {
+	isRecording.value = recording
+
+	if (!recorder.value.isRecording) {
+		setTimeout(() => recorder.value.start(), 200)
+	}
+	else {
+		try {
+			recorder.value.stop()
+
+			const record = recorder.value.records[0]
+
+			files.value.push({
+				blob: record.blob,
+				name: `audio.${format.value}`,
+				size: record.blob.size,
+				duration: record.duration,
+				type: record.blob.type,
+				audio: true,
+				localUrl: URL.createObjectURL(record.blob),
+				url: '',
+				extension: format.value,
+			})
+
+			recorder.value = initRecorder()
+			sendMessage()
+		}
+		catch {
+			setTimeout(() => stopRecorder(), 100)
+		}
+	}
+}
+
+function stopRecorder() {
+	if (recorder.value.isRecording) {
+		try {
+			recorder.value.stop()
+			recorder.value = initRecorder()
+		}
+		catch {
+			setTimeout(() => stopRecorder(), 100)
+		}
+	}
+}
+
+function textareaActionHandler() {
+	emit('textarea-action-handler', message.value)
+}
+
+function sendMessage() {
+	let msg = message.value.trim()
+
+	if (!files.value.length && !msg)
+		return
+
+	if (isFileLoading.value)
+		return
+
+	selectedUsersTag.value.forEach((user) => {
+		msg = msg.replace(
+			`@${user.username}`,
+			`<usertag>${user._id}</usertag>`,
+		)
+	})
+
+	const messageFiles = files.value.length ? files.value : null
+
+	if (editedMessage.value._id) {
+		if (
+			editedMessage.value.content !== msg
+			|| editedMessage.value.files?.length
+			|| files.value.length
+		) {
+			emit('edit-message', {
+				messageId: editedMessage.value._id,
+				newContent: msg,
+				files: messageFiles,
+				replyMessage: messageReply.value,
+				usersTag: selectedUsersTag.value,
+			})
+		}
+	}
+	else {
+		emit('send-message', {
+			content: msg,
+			files: messageFiles,
+			replyMessage: messageReply.value,
+			usersTag: selectedUsersTag.value,
 		})
-
-		this.getTextareaRef().addEventListener('blur', () => {
-			setTimeout(() => {
-				this.resetFooterList()
-			}, 100)
-
-			if (isMobile)
-				setTimeout(() => (this.keepKeyboardOpen = false))
-		})
-	},
-
-	beforeUnmount() {
-		this.stopRecorder()
-	},
-
-	methods: {
-		getTextareaRef() {
-			return this.$refs.roomTextarea
-		},
-		focusTextarea(disableMobileFocus) {
-			if (detectMobile() && disableMobileFocus)
-				return
-			if (!this.getTextareaRef())
-				return
-			this.getTextareaRef().focus()
-
-			if (this.cursorRangePosition) {
-				setTimeout(() => {
-					const offset = detectChrome() ? 0 : 1
-					this.getTextareaRef().setSelectionRange(
-						this.cursorRangePosition + offset,
-						this.cursorRangePosition + offset,
-					)
-					this.cursorRangePosition = null
-				})
-			}
-		},
-		onChangeInput() {
-			if (this.getTextareaRef()?.value || this.getTextareaRef()?.value === '') {
-				this.message = this.getTextareaRef()?.value
-			}
-			this.keepKeyboardOpen = true
-			this.resizeTextarea()
-			this.$emit('typing-message', this.message)
-		},
-		resizeTextarea() {
-			const el = this.getTextareaRef()
-
-			if (!el)
-				return
-
-			const padding = window
-				.getComputedStyle(el, null)
-				.getPropertyValue('padding-top')
-				.replace('px', '')
-
-			el.style.height = 0
-			el.style.height = `${el.scrollHeight - padding * 2}px`
-		},
-		escapeTextarea() {
-			if (this.filteredEmojis.length) {
-				this.filteredEmojis = []
-			}
-			else if (this.filteredUsersTag.length) {
-				this.filteredUsersTag = []
-			}
-			else if (this.filteredTemplatesText.length) {
-				this.filteredTemplatesText = []
-			}
-			else {
-				this.resetMessage()
-			}
-		},
-		onPasteImage(pasteEvent) {
-			const items = pasteEvent.clipboardData?.items
-
-			if (items) {
-				Array.from(items).forEach((item) => {
-					if (item.type.includes('image')) {
-						const blob = item.getAsFile()
-						this.onFileChange([blob])
-					}
-				})
-			}
-		},
-		updateActiveUpOrDown(event, direction) {
-			if (this.filteredEmojis.length) {
-				this.activeUpOrDownEmojis = direction
-				event.preventDefault()
-			}
-			else if (this.filteredUsersTag.length) {
-				this.activeUpOrDownUsersTag = direction
-				event.preventDefault()
-			}
-			else if (this.filteredTemplatesText.length) {
-				this.activeUpOrDownTemplatesText = direction
-				event.preventDefault()
-			}
-		},
-		selectItem() {
-			if (this.filteredEmojis.length) {
-				this.selectEmojiItem = true
-			}
-			else if (this.filteredUsersTag.length) {
-				this.selectUsersTagItem = true
-			}
-			else if (this.filteredTemplatesText.length) {
-				this.selectTemplatesTextItem = true
-			}
-		},
-		selectEmoji(emoji) {
-			this.selectEmojiItem = false
-
-			if (!emoji)
-				return
-
-			const { position, endPosition } = this.getCharPosition(':')
-
-			this.message
-				= this.message.substr(0, position - 1)
-					+ emoji
-					+ this.message.substr(endPosition, this.message.length - 1)
-
-			this.cursorRangePosition = position
-			this.focusTextarea()
-		},
-		selectTemplateText(template) {
-			this.selectTemplatesTextItem = false
-
-			if (!template)
-				return
-
-			const { position, endPosition } = this.getCharPosition('/')
-
-			const space = this.message.substr(endPosition, endPosition).length
-				? ''
-				: ' '
-
-			this.message
-				= this.message.substr(0, position - 1)
-					+ template.text
-					+ space
-					+ this.message.substr(endPosition, this.message.length - 1)
-
-			this.cursorRangePosition
-				= position + template.text.length + space.length + 1
-
-			this.focusTextarea()
-		},
-		addEmoji(emoji) {
-			this.message += emoji.unicode
-			this.focusTextarea(true)
-		},
-		launchFilePicker() {
-			this.$refs.file.value = ''
-			this.$refs.file.click()
-		},
-		async onFileChange(files) {
-			this.fileDialog = true
-			this.focusTextarea()
-
-			Array.from(files).forEach(async (file) => {
-				const fileURL = URL.createObjectURL(file)
-				const typeIndex = file.name.lastIndexOf('.')
-
-				this.files.push({
-					loading: true,
-					name: file.name.substring(0, typeIndex),
-					size: file.size,
-					type: file.type,
-					extension: file.name.substring(typeIndex + 1),
-					localUrl: fileURL,
-				})
-
-				const blobFile = await fetch(fileURL).then(res => res.blob())
-
-				let loadedFile = this.files.find(file => file.localUrl === fileURL)
-
-				if (loadedFile) {
-					loadedFile.blob = blobFile
-					loadedFile.loading = false
-					delete loadedFile.loading
-				}
-			})
-
-			setTimeout(() => (this.fileDialog = false), 500)
-		},
-		removeFile(index) {
-			this.files.splice(index, 1)
-			this.focusTextarea()
-		},
-		toggleRecorder(recording) {
-			this.isRecording = recording
-
-			if (!this.recorder.isRecording) {
-				setTimeout(() => this.recorder.start(), 200)
-			}
-			else {
-				try {
-					this.recorder.stop()
-
-					const record = this.recorder.records[0]
-
-					this.files.push({
-						blob: record.blob,
-						name: `audio.${this.format}`,
-						size: record.blob.size,
-						duration: record.duration,
-						type: record.blob.type,
-						audio: true,
-						localUrl: URL.createObjectURL(record.blob),
-					})
-
-					this.recorder = this.initRecorder()
-					this.sendMessage()
-				}
-				catch {
-					setTimeout(() => this.stopRecorder(), 100)
-				}
-			}
-		},
-		stopRecorder() {
-			if (this.recorder.isRecording) {
-				try {
-					this.recorder.stop()
-					this.recorder = this.initRecorder()
-				}
-				catch {
-					setTimeout(() => this.stopRecorder(), 100)
-				}
-			}
-		},
-		textareaActionHandler() {
-			this.$emit('textarea-action-handler', this.message)
-		},
-		sendMessage() {
-			let message = this.message.trim()
-
-			if (!this.files.length && !message)
-				return
-
-			if (this.isFileLoading)
-				return
-
-			this.selectedUsersTag.forEach((user) => {
-				message = message.replace(
-					`@${user.username}`,
-					`<usertag>${user._id}</usertag>`,
-				)
-			})
-
-			const files = this.files.length ? this.files : null
-
-			if (this.editedMessage._id) {
-				if (
-					this.editedMessage.content !== message
-					|| this.editedMessage.files?.length
-					|| this.files.length
-				) {
-					this.$emit('edit-message', {
-						messageId: this.editedMessage._id,
-						newContent: message,
-						files,
-						replyMessage: this.messageReply,
-						usersTag: this.selectedUsersTag,
-					})
-				}
-			}
-			else {
-				this.$emit('send-message', {
-					content: message,
-					files,
-					replyMessage: this.messageReply,
-					usersTag: this.selectedUsersTag,
-				})
-			}
-
-			this.resetMessage(true)
-		},
-		editMessage(message) {
-			this.resetMessage()
-
-			this.editedMessage = { ...message }
-
-			let messageContent = message.content
-			const initialContent = messageContent
-
-			const firstTag = '<usertag>'
-			const secondTag = '</usertag>'
-
-			const usertags = [
-				...messageContent.matchAll(new RegExp(firstTag, 'gi')),
-			].map(a => a.index)
-
-			usertags.forEach((index) => {
-				const userId = initialContent.substring(
-					index + firstTag.length,
-					initialContent.indexOf(secondTag, index),
-				)
-
-				const user = this.room.users.find(user => user._id === userId)
-
-				messageContent = messageContent.replace(
-					`${firstTag}${userId}${secondTag}`,
-					`@${user?.username || 'unknown'}`,
-				)
-
-				this.selectUserTag(user, true)
-			})
-
-			this.message = messageContent
-
-			if (message.files) {
-				this.files = [...message.files]
-			}
-
-			setTimeout(() => this.resizeTextarea())
-		},
-		replyMessage(message) {
-			this.editedMessage = {}
-			this.messageReply = message
-			this.focusTextarea()
-		},
-		updateFooterLists() {
-			this.updateFooterList('@')
-			this.updateFooterList(':')
-			this.updateFooterList('/')
-		},
-		updateFooterList(tagChar) {
-			if (!this.getTextareaRef())
-				return
-
-			if (tagChar === ':' && !this.emojisSuggestionEnabled) {
-				return
-			}
-
-			if (tagChar === '@' && (!this.userTagsEnabled || !this.room.users)) {
-				return
-			}
-
-			if (tagChar === '/' && !this.templatesText) {
-				return
-			}
-
-			const textareaCursorPosition = this.getTextareaRef().selectionStart
-
-			let position = textareaCursorPosition
-
-			while (
-				position > 0
-				&& this.message.charAt(position - 1) !== tagChar
-				// eslint-disable-next-line no-unmodified-loop-condition
-				&& (this.message.charAt(position - 1) !== ' ' || tagChar !== ':')
-			) {
-				position--
-			}
-
-			const beforeTag = this.message.charAt(position - 2)
-			const notLetterNumber = !beforeTag.match(/^[0-9a-z]+$/i)
-
-			if (
-				this.message.charAt(position - 1) === tagChar
-				&& (!beforeTag || beforeTag === ' ' || notLetterNumber)
-			) {
-				const query = this.message.substring(position, textareaCursorPosition)
-				if (tagChar === ':') {
-					this.updateEmojis(query)
-				}
-				else if (tagChar === '@') {
-					this.updateShowUsersTag(query)
-				}
-				else if (tagChar === '/') {
-					this.updateShowTemplatesText(query)
-				}
-			}
-			else {
-				this.resetFooterList(tagChar)
-			}
-		},
-		updateShowUsersTag(query) {
-			this.filteredUsersTag = filteredItems(
-				this.room.users,
-				'username',
-				query,
-				true,
-			).filter(user => user._id !== this.currentUserId)
-		},
-		selectUserTag(user, editMode = false) {
-			this.selectUsersTagItem = false
-
-			if (!user)
-				return
-
-			const { position, endPosition } = this.getCharPosition('@')
-
-			const space = this.message.substr(endPosition, endPosition).length
-				? ''
-				: ' '
-
-			this.message
-				= this.message.substr(0, position)
-					+ user.username
-					+ space
-					+ this.message.substr(endPosition, this.message.length - 1)
-
-			this.selectedUsersTag = [...this.selectedUsersTag, { ...user }]
-
-			if (!editMode) {
-				this.cursorRangePosition
-					= position + user.username.length + space.length + 1
-			}
-
-			this.focusTextarea()
-		},
-		updateShowTemplatesText(query) {
-			this.filteredTemplatesText = filteredItems(
-				this.templatesText,
-				'tag',
-				query,
-				true,
-			)
-		},
-		getCharPosition(tagChar) {
-			const cursorPosition = this.getTextareaRef().selectionStart
-
-			let position = cursorPosition
-			while (position > 0 && this.message.charAt(position - 1) !== tagChar) {
-				position--
-			}
-
-			const endPosition = this.getTextareaRef().selectionEnd
-
-			return { position, endPosition }
-		},
-		async updateEmojis(query) {
-			if (!query)
-				return
-
-			const emojis = await this.emojisDB.getEmojiBySearchQuery(query)
-			this.filteredEmojis = emojis.map(emoji => emoji.unicode)
-		},
-		resetFooterList(tagChar = null) {
-			if (tagChar === ':') {
-				this.filteredEmojis = []
-			}
-			else if (tagChar === '@') {
-				this.filteredUsersTag = []
-			}
-			else if (tagChar === '/') {
-				this.filteredTemplatesText = []
-			}
-			else {
-				this.filteredEmojis = []
-				this.filteredUsersTag = []
-				this.filteredTemplatesText = []
-			}
-		},
-		resetMessage(disableMobileFocus = false, initRoom = false) {
-			if (!initRoom) {
-				this.$emit('typing-message', null)
-			}
-
-			this.selectedUsersTag = []
-			this.resetFooterList()
-			this.resetTextareaSize()
-			this.message = ''
-			this.editedMessage = {}
-			this.messageReply = null
-			this.files = []
-			this.emojiOpened = false
-			this.preventKeyboardFromClosing()
-
-			if (this.textareaAutoFocus || !initRoom) {
-				setTimeout(() => this.focusTextarea(disableMobileFocus))
-			}
-		},
-		resetTextareaSize() {
-			if (this.getTextareaRef()) {
-				this.getTextareaRef().style.height = '20px'
-			}
-		},
-		preventKeyboardFromClosing() {
-			if (this.keepKeyboardOpen)
-				this.getTextareaRef().focus()
-		},
-		initRecorder() {
-			this.isRecording = false
-
-			return new Recorder({
-				bitRate: Number(this.audioBitRate),
-				sampleRate: Number(this.audioSampleRate),
-				beforeRecording: null,
-				afterRecording: null,
-				pauseRecording: null,
-				micFailed: this.micFailed,
-			})
-		},
-		micFailed() {
-			this.isRecording = false
-			this.recorder = this.initRecorder()
-		},
-	},
+	}
+
+	resetMessage(true)
+}
+
+function editMessage(msg: Message) {
+	resetMessage()
+
+	editedMessage.value = { ...msg }
+
+	let messageContent = msg.content || ''
+	const initialContent = messageContent
+
+	const firstTag = '<usertag>'
+	const secondTag = '</usertag>'
+
+	const usertags = [
+		...messageContent.matchAll(new RegExp(firstTag, 'gi')),
+	].map(a => a.index)
+
+	usertags.forEach((index) => {
+		if (index === undefined)
+			return
+		const userId = initialContent.substring(
+			index + firstTag.length,
+			initialContent.indexOf(secondTag, index),
+		)
+
+		const user = props.room.users.find(user => user._id === userId)
+
+		messageContent = messageContent.replace(
+			`${firstTag}${userId}${secondTag}`,
+			`@${user?.username || 'unknown'}`,
+		)
+
+		selectUserTag(user as { _id: string, username: string }, true)
+	})
+
+	message.value = messageContent
+
+	if (msg.files) {
+		files.value = [...msg.files]
+	}
+
+	setTimeout(() => resizeTextarea())
+}
+
+function replyMessage(msg: Message) {
+	editedMessage.value = {}
+	messageReply.value = msg
+	focusTextarea()
+}
+
+function updateFooterLists() {
+	updateFooterList('@')
+	updateFooterList(':')
+	updateFooterList('/')
+}
+
+function updateFooterList(tagChar: string) {
+	if (!getTextareaRef())
+		return
+
+	if (tagChar === ':' && !props.emojisSuggestionEnabled) {
+		return
+	}
+
+	if (tagChar === '@' && (!props.userTagsEnabled || !props.room.users)) {
+		return
+	}
+
+	if (tagChar === '/' && !props.templatesText) {
+		return
+	}
+
+	const textareaCursorPosition = getTextareaRef()!.selectionStart
+
+	let position = textareaCursorPosition
+
+	while (
+		position > 0
+		&& message.value.charAt(position - 1) !== tagChar
+		// eslint-disable-next-line no-unmodified-loop-condition
+		&& (message.value.charAt(position - 1) !== ' ' || tagChar !== ':')
+	) {
+		position--
+	}
+
+	const beforeTag = message.value.charAt(position - 2)
+	const notLetterNumber = !beforeTag.match(/^[0-9a-z]+$/i)
+
+	if (
+		message.value.charAt(position - 1) === tagChar
+		&& (!beforeTag || beforeTag === ' ' || notLetterNumber)
+	) {
+		const query = message.value.substring(position, textareaCursorPosition)
+		if (tagChar === ':') {
+			updateEmojis(query)
+		}
+		else if (tagChar === '@') {
+			updateShowUsersTag(query)
+		}
+		else if (tagChar === '/') {
+			updateShowTemplatesText(query)
+		}
+	}
+	else {
+		resetFooterList(tagChar)
+	}
+}
+
+function updateShowUsersTag(query: string) {
+	filteredUsersTag.value = filteredItems(
+		props.room.users as any,
+		'username',
+		query,
+		true,
+	)
+}
+
+function selectUserTag(user: any, editMode = false) {
+	selectUsersTagItem.value = false
+
+	if (!user)
+		return
+
+	const { position, endPosition } = getCharPosition('@')
+
+	const space = message.value.substr(endPosition, endPosition).length
+		? ''
+		: ' '
+
+	message.value
+		= message.value.substr(0, position)
+			+ user.username
+			+ space
+			+ message.value.substr(endPosition, message.value.length - 1)
+
+	selectedUsersTag.value = [...selectedUsersTag.value, { ...user }]
+
+	if (!editMode) {
+		cursorRangePosition.value
+			= position + user.username.length + space.length + 1
+	}
+
+	focusTextarea()
+}
+
+function updateShowTemplatesText(query: string) {
+	filteredTemplatesText.value = filteredItems(
+		props.templatesText as TemplateText[],
+		'tag',
+		query,
+		true,
+	)
+}
+
+function getCharPosition(tagChar: string) {
+	const cursorPosition = getTextareaRef()!.selectionStart
+
+	let position = cursorPosition
+	while (position > 0 && message.value.charAt(position - 1) !== tagChar) {
+		position--
+	}
+
+	const endPosition = getTextareaRef()!.selectionEnd
+
+	return { position, endPosition }
+}
+
+async function updateEmojis(query: string) {
+	if (!query)
+		return
+
+	const emojis = await emojisDB.getEmojiBySearchQuery(query)
+	filteredEmojis.value = emojis.map((emoji: any) => emoji.unicode)
+}
+
+function resetFooterList(tagChar: string | null = null) {
+	if (tagChar === ':') {
+		filteredEmojis.value = []
+	}
+	else if (tagChar === '@') {
+		filteredUsersTag.value = []
+	}
+	else if (tagChar === '/') {
+		filteredTemplatesText.value = []
+	}
+	else {
+		filteredEmojis.value = []
+		filteredUsersTag.value = []
+		filteredTemplatesText.value = []
+	}
+}
+
+function resetMessage(disableMobileFocus = false, initRoom = false) {
+	if (!initRoom) {
+		emit('typing-message', null)
+	}
+
+	selectedUsersTag.value = []
+	resetFooterList()
+	resetTextareaSize()
+	message.value = ''
+	editedMessage.value = {}
+	messageReply.value = null
+	files.value = []
+	emojiOpened.value = false
+	preventKeyboardFromClosing()
+
+	if (props.textareaAutoFocus || !initRoom) {
+		setTimeout(() => focusTextarea(disableMobileFocus))
+	}
+}
+
+function resetTextareaSize() {
+	if (getTextareaRef()) {
+		getTextareaRef()!.style.height = '20px'
+	}
+}
+
+function preventKeyboardFromClosing() {
+	if (keepKeyboardOpen.value)
+		getTextareaRef()?.focus()
 }
 </script>
 
@@ -809,7 +839,7 @@ export default {
 				<div
 					v-if="editedMessage._id"
 					class="vac-svg-button"
-					@click="resetMessage"
+					@click="resetMessage()"
 				>
 					<slot name="edit-close-icon">
 						<SvgIcon name="close-outline" />
@@ -856,11 +886,11 @@ export default {
 					v-if="showFiles"
 					ref="file"
 					type="file"
-					:multiple="multipleFiles ? true : null"
+					:multiple="multipleFiles || undefined"
 					:accept="acceptedFiles"
-					:capture="captureFiles"
+					:capture="(captureFiles as any)"
 					style="display: none"
-					@change="onFileChange($event.target.files)"
+					@change="onFileChange(($event.target as HTMLInputElement).files!)"
 				>
 
 				<div

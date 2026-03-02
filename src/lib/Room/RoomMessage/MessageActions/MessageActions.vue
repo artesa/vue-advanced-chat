@@ -1,150 +1,151 @@
-<script>
-import EmojiPickerContainer from '../../../../components/EmojiPickerContainer/EmojiPickerContainer'
+<script setup lang="ts">
+import type { Message, MessageAction, MessageReactions } from '@/types'
 
-import SvgIcon from '../../../../components/SvgIcon/SvgIcon'
-import { findParentBySelector } from '../../../../utils/element-selector'
-import vClickOutside from '../../../../utils/on-click-outside'
+import { computed, ref, useTemplateRef, watch } from 'vue'
+import EmojiPickerContainer from '@/components/EmojiPickerContainer/EmojiPickerContainer.vue'
+import SvgIcon from '@/components/SvgIcon/SvgIcon.vue'
+import { findParentBySelector } from '@/utils/element-selector'
 
-export default {
-	name: 'MessageActions',
-	components: { SvgIcon, EmojiPickerContainer },
+import vClickOutside from '@/utils/on-click-outside'
 
-	directives: {
-		clickOutside: vClickOutside,
-	},
+const props = withDefaults(defineProps<{
+	currentUserId: string | number
+	message: Message
+	messageActions: MessageAction[]
+	showReactionEmojis: boolean
+	messageHover: boolean
+	hoverMessageId?: string | number | null
+	hoverAudioProgress: boolean
+	emojiDataSource?: string
+	teleportTarget?: HTMLElement
+}>(), {
+	hoverMessageId: null,
+	emojiDataSource: undefined,
+	teleportTarget: undefined,
+})
 
-	props: {
-		currentUserId: { type: [String, Number], required: true },
-		message: { type: Object, required: true },
-		messageActions: { type: Array, required: true },
-		showReactionEmojis: { type: Boolean, required: true },
-		messageHover: { type: Boolean, required: true },
-		hoverMessageId: { type: [String, Number], default: null },
-		hoverAudioProgress: { type: Boolean, required: true },
-		emojiDataSource: { type: String, default: undefined },
-		teleportTarget: { type: Object, default: undefined },
-	},
+const emit = defineEmits<{
+	'update-emoji-opened': [value: boolean]
+	'update-options-opened': [value: boolean]
+	'update-message-hover': [value: boolean]
+	'message-action-handler': [action: MessageAction]
+	'send-message-reaction': [payload: { emoji: string, reaction: MessageReactions | undefined }]
+}>()
 
-	emits: [
-		'update-emoji-opened',
-		'update-options-opened',
-		'update-message-hover',
-		'message-action-handler',
-		'send-message-reaction',
-	],
+const menuOptionsTop = ref(0)
+const optionsOpened = ref(false)
+const optionsClosing = ref(false)
+const emojiOpened = ref(false)
 
-	data() {
-		return {
-			menuOptionsTop: 0,
-			optionsOpened: false,
-			optionsClosing: false,
-			emojiOpened: false,
+const root = useTemplateRef<HTMLElement>('root')
+const menuOptions = useTemplateRef<HTMLElement>('menuOptions')
+const actionIcon = useTemplateRef<HTMLElement>('actionIcon')
+
+const filteredMessageActions = computed(() => {
+	return props.message.senderId === props.currentUserId
+		? props.messageActions
+		: props.messageActions.filter(message => !message.onlyMe)
+})
+
+const isMessageActions = computed(() => {
+	return (
+		filteredMessageActions.value.length
+		&& props.messageHover
+		&& !props.message.deleted
+		&& !props.message.disableActions
+		&& !props.hoverAudioProgress
+	)
+})
+
+const isMessageReactions = computed(() => {
+	return (
+		props.showReactionEmojis
+		&& props.messageHover
+		&& !props.message.deleted
+		&& !props.message.disableReactions
+		&& !props.hoverAudioProgress
+	)
+})
+
+watch(emojiOpened, (val) => {
+	emit('update-emoji-opened', val)
+	if (val)
+		optionsOpened.value = false
+})
+
+watch(optionsOpened, (val) => {
+	emit('update-options-opened', val)
+})
+
+function openOptions(): void {
+	if (optionsClosing.value)
+		return
+
+	optionsOpened.value = !optionsOpened.value
+	if (!optionsOpened.value)
+		return
+
+	setTimeout(() => {
+		const roomFooterRef = findParentBySelector(root.value, '#room-footer')
+
+		if (
+			!roomFooterRef
+			|| !menuOptions.value
+			|| !actionIcon.value
+		) {
+			return
 		}
-	},
 
-	computed: {
-		isMessageActions() {
-			return (
-				this.filteredMessageActions.length
-				&& this.messageHover
-				&& !this.message.deleted
-				&& !this.message.disableActions
-				&& !this.hoverAudioProgress
-			)
-		},
-		isMessageReactions() {
-			return (
-				this.showReactionEmojis
-				&& this.messageHover
-				&& !this.message.deleted
-				&& !this.message.disableReactions
-				&& !this.hoverAudioProgress
-			)
-		},
-		filteredMessageActions() {
-			return this.message.senderId === this.currentUserId
-				? this.messageActions
-				: this.messageActions.filter(message => !message.onlyMe)
-		},
-	},
+		const menuOptionsTopVal
+			= menuOptions.value.getBoundingClientRect().height
 
-	watch: {
-		emojiOpened(val) {
-			this.$emit('update-emoji-opened', val)
-			if (val)
-				this.optionsOpened = false
-		},
-		optionsOpened(val) {
-			this.$emit('update-options-opened', val)
-		},
-	},
+		const actionIconTop = actionIcon.value.getBoundingClientRect().top
+		const roomFooterTop = roomFooterRef.getBoundingClientRect().top
 
-	methods: {
-		openOptions() {
-			if (this.optionsClosing)
-				return
+		const optionsTopPosition
+			= roomFooterTop - actionIconTop > menuOptionsTopVal + 50
 
-			this.optionsOpened = !this.optionsOpened
-			if (!this.optionsOpened)
-				return
+		if (optionsTopPosition)
+			menuOptionsTop.value = 30
+		else menuOptionsTop.value = -menuOptionsTopVal
+	})
+}
 
-			setTimeout(() => {
-				const roomFooterRef = findParentBySelector(this.$el, '#room-footer')
+function closeOptions(): void {
+	optionsOpened.value = false
+	optionsClosing.value = true
+	updateMessageHover()
+	setTimeout(() => (optionsClosing.value = false), 100)
+}
 
-				if (
-					!roomFooterRef
-					|| !this.$refs.menuOptions
-					|| !this.$refs.actionIcon
-				) {
-					return
-				}
+function openEmoji(): void {
+	emojiOpened.value = !emojiOpened.value
+}
 
-				const menuOptionsTop
-					= this.$refs.menuOptions.getBoundingClientRect().height
+function closeEmoji(): void {
+	emojiOpened.value = false
+	updateMessageHover()
+}
 
-				const actionIconTop = this.$refs.actionIcon.getBoundingClientRect().top
-				const roomFooterTop = roomFooterRef.getBoundingClientRect().top
+function updateMessageHover(): void {
+	if (props.hoverMessageId !== props.message._id) {
+		emit('update-message-hover', false)
+	}
+}
 
-				const optionsTopPosition
-					= roomFooterTop - actionIconTop > menuOptionsTop + 50
+function messageActionHandler(action: MessageAction): void {
+	closeOptions()
+	emit('message-action-handler', action)
+}
 
-				if (optionsTopPosition)
-					this.menuOptionsTop = 30
-				else this.menuOptionsTop = -menuOptionsTop
-			})
-		},
-		closeOptions() {
-			this.optionsOpened = false
-			this.optionsClosing = true
-			this.updateMessageHover()
-			setTimeout(() => (this.optionsClosing = false), 100)
-		},
-		openEmoji() {
-			this.emojiOpened = !this.emojiOpened
-		},
-		closeEmoji() {
-			this.emojiOpened = false
-			this.updateMessageHover()
-		},
-		updateMessageHover() {
-			if (this.hoverMessageId !== this.message._id) {
-				this.$emit('update-message-hover', false)
-			}
-		},
-		messageActionHandler(action) {
-			this.closeOptions()
-			this.$emit('message-action-handler', action)
-		},
-		sendMessageReaction(emoji, reaction) {
-			this.$emit('send-message-reaction', { emoji, reaction })
-			this.closeEmoji()
-		},
-	},
+function sendMessageReaction(emoji: { unicode: string }): void {
+	emit('send-message-reaction', { emoji: emoji.unicode, reaction: props.message.reactions })
+	closeEmoji()
 }
 </script>
 
 <template>
-	<div class="vac-message-actions-wrapper">
+	<div ref="root" class="vac-message-actions-wrapper">
 		<div
 			class="vac-options-container"
 			:style="{

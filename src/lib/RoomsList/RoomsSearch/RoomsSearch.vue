@@ -1,26 +1,24 @@
-<script>
-import SvgIcon from '../../../components/SvgIcon/SvgIcon'
+<script setup lang="ts">
+import type { Room, TextMessages } from '@/types'
 
-export default {
-	name: 'RoomsSearch',
-	components: { SvgIcon },
+import { computed } from 'vue'
 
-	props: {
-		textMessages: { type: Object, required: true },
-		showSearch: { type: Boolean, required: true },
-		showAddRoom: { type: Boolean, required: true },
-		rooms: { type: Array, required: true },
-		loadingRooms: { type: Boolean, required: true },
-	},
+import SvgIcon from '../../../components/SvgIcon/SvgIcon.vue'
 
-	emits: ['search-room', 'add-room'],
+const props = defineProps<{
+	textMessages: TextMessages
+	showSearch: boolean
+	showAddRoom: boolean
+	rooms: Room[]
+	loadingRooms: boolean
+}>()
 
-	computed: {
-		showSearchBar() {
-			return this.showSearch || this.showAddRoom
-		},
-	},
-}
+defineEmits<{
+	'search-room': [event: Event]
+	'add-room': []
+}>()
+
+const showSearchBar = computed(() => props.showSearch || props.showAddRoom)
 </script>
 
 <template>

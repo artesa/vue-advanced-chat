@@ -1,32 +1,24 @@
-<script>
-import Loader from '../../../../../components/Loader/Loader'
-import SvgIcon from '../../../../../components/SvgIcon/SvgIcon'
+<script setup lang="ts">
+import type { MessageFile } from '@/types'
+
+import { computed } from 'vue'
+import Loader from '../../../../../components/Loader/Loader.vue'
+
+import SvgIcon from '../../../../../components/SvgIcon/SvgIcon.vue'
 
 import { isImageFile, isVideoFile } from '../../../../../utils/media-file'
 
-export default {
-	name: 'RoomFiles',
-	components: {
-		Loader,
-		SvgIcon,
-	},
+const props = defineProps<{
+	file: MessageFile & { loading?: boolean }
+	index: number
+}>()
 
-	props: {
-		file: { type: Object, required: true },
-		index: { type: Number, required: true },
-	},
+defineEmits<{
+	'remove-file': [index: number]
+}>()
 
-	emits: ['remove-file'],
-
-	computed: {
-		isImage() {
-			return isImageFile(this.file)
-		},
-		isVideo() {
-			return isVideoFile(this.file)
-		},
-	},
-}
+const isImage = computed(() => isImageFile(props.file))
+const isVideo = computed(() => isVideoFile(props.file))
 </script>
 
 <template>

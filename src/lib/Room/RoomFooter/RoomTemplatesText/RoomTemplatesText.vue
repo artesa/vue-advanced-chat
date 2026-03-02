@@ -1,49 +1,47 @@
-<script>
-export default {
-	name: 'RoomTemplatesText',
+<script setup lang="ts">
+import type { TemplateText } from '@/types'
+import { ref, watch } from 'vue'
 
-	props: {
-		filteredTemplatesText: { type: Array, required: true },
-		selectItem: { type: Boolean, default: null },
-		activeUpOrDown: { type: Number, default: null },
-	},
+const props = defineProps<{
+	filteredTemplatesText: TemplateText[]
+	selectItem: boolean | null
+	activeUpOrDown: number | null
+}>()
 
-	emits: ['select-template-text', 'activate-item'],
+const emit = defineEmits<{
+	'select-template-text': [template: TemplateText]
+	'activate-item': []
+}>()
 
-	data() {
-		return {
-			activeItem: null,
-		}
-	},
+const activeItem = ref<number | null>(null)
 
-	watch: {
-		filteredTemplatesText(val, oldVal) {
-			if (!oldVal.length || val.length !== oldVal.length) {
-				this.activeItem = 0
-			}
-		},
-		selectItem(val) {
-			if (val) {
-				this.$emit(
-					'select-template-text',
-					this.filteredTemplatesText[this.activeItem],
-				)
-			}
-		},
-		activeUpOrDown() {
-			if (
-				this.activeUpOrDown > 0
-				&& this.activeItem < this.filteredTemplatesText.length - 1
-			) {
-				this.activeItem++
-			}
-			else if (this.activeUpOrDown < 0 && this.activeItem > 0) {
-				this.activeItem--
-			}
-			this.$emit('activate-item')
-		},
-	},
-}
+watch(() => props.filteredTemplatesText, (val, oldVal) => {
+	if (!oldVal.length || val.length !== oldVal.length) {
+		activeItem.value = 0
+	}
+})
+
+watch(() => props.selectItem, (val) => {
+	if (val) {
+		emit(
+			'select-template-text',
+			props.filteredTemplatesText[activeItem.value!],
+		)
+	}
+})
+
+watch(() => props.activeUpOrDown, () => {
+	if (
+		props.activeUpOrDown! > 0
+		&& activeItem.value! < props.filteredTemplatesText.length - 1
+	) {
+		activeItem.value!++
+	}
+	else if (props.activeUpOrDown! < 0 && activeItem.value! > 0) {
+		activeItem.value!--
+	}
+	emit('activate-item')
+})
 </script>
 
 <template>

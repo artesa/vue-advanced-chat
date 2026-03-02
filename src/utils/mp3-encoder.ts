@@ -2,15 +2,31 @@
 
 import { Mp3Encoder } from './lamejs'
 
+interface Mp3EncoderConfig {
+	bitRate: number
+	sampleRate: number
+}
+
+interface Mp3EncoderResult {
+	id: number
+	blob: Blob
+	url: string
+}
+
 export default class {
-	constructor(config) {
+	private bitRate: number
+	private sampleRate: number
+	private dataBuffer: Int8Array[]
+	private encoder: any
+
+	constructor(config: Mp3EncoderConfig) {
 		this.bitRate = config.bitRate
 		this.sampleRate = config.sampleRate
 		this.dataBuffer = []
 		this.encoder = new Mp3Encoder(1, this.sampleRate, this.bitRate)
 	}
 
-	encode(arrayBuffer) {
+	encode(arrayBuffer: ArrayBuffer | Float32Array): void {
 		const maxSamples = 1152
 		const samples = this._convertBuffer(arrayBuffer)
 		let remaining = samples.length
@@ -23,9 +39,9 @@ export default class {
 		}
 	}
 
-	finish() {
+	finish(): Mp3EncoderResult {
 		this.dataBuffer.push(this.encoder.flush())
-		const blob = new Blob(this.dataBuffer, { type: 'audio/mp3' })
+		const blob = new Blob(this.dataBuffer as BlobPart[], { type: 'audio/mp3' })
 		this.dataBuffer = []
 
 		return {
@@ -35,16 +51,16 @@ export default class {
 		}
 	}
 
-	_floatTo16BitPCM(input, output) {
+	private _floatTo16BitPCM(input: Float32Array, output: Int16Array): void {
 		for (let i = 0; i < input.length; i++) {
 			const s = Math.max(-1, Math.min(1, input[i]))
 			output[i] = s < 0 ? s * 0x8000 : s * 0x7FFF
 		}
 	}
 
-	_convertBuffer(arrayBuffer) {
-		const data = new Float32Array(arrayBuffer)
-		const out = new Int16Array(arrayBuffer.length)
+	private _convertBuffer(arrayBuffer: ArrayBuffer | Float32Array): Int16Array {
+		const data = arrayBuffer instanceof Float32Array ? arrayBuffer : new Float32Array(arrayBuffer)
+		const out = new Int16Array(arrayBuffer.byteLength / Float32Array.BYTES_PER_ELEMENT)
 		this._floatTo16BitPCM(data, out)
 		return out
 	}

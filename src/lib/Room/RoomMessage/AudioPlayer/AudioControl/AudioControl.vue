@@ -1,57 +1,58 @@
-<script>
-export default {
-	props: {
-		percentage: { type: Number, default: 0 },
-		messageSelectionEnabled: { type: Boolean, required: true },
-	},
+<script setup lang="ts">
+import { ref, useTemplateRef } from 'vue'
 
-	emits: ['hover-audio-progress', 'change-linehead'],
+const props = defineProps<{
+	percentage: number
+	messageSelectionEnabled: boolean
+}>()
 
-	data() {
-		return {
-			isMouseDown: false,
-		}
-	},
+const emit = defineEmits<{
+	'hover-audio-progress': [value: boolean]
+	'change-linehead': [position: number]
+}>()
 
-	methods: {
-		onMouseDown(ev) {
-			if (this.messageSelectionEnabled)
-				return
+const isMouseDown = ref(false)
+const progress = useTemplateRef<HTMLDivElement>('progress')
 
-			this.isMouseDown = true
-			const seekPos = this.calculateLineHeadPosition(ev, this.$refs.progress)
-			this.$emit('change-linehead', seekPos)
-			document.addEventListener('mousemove', this.onMouseMove)
-			document.addEventListener('mouseup', this.onMouseUp)
-		},
-		onMouseUp(ev) {
-			if (this.messageSelectionEnabled)
-				return
+function calculateLineHeadPosition(ev: MouseEvent, element: HTMLDivElement) {
+	const progressWidth = element.getBoundingClientRect().width
+	const leftPosition = element.getBoundingClientRect().left
+	let pos = (ev.clientX - leftPosition) / progressWidth
 
-			this.isMouseDown = false
-			document.removeEventListener('mouseup', this.onMouseUp)
-			document.removeEventListener('mousemove', this.onMouseMove)
-			const seekPos = this.calculateLineHeadPosition(ev, this.$refs.progress)
-			this.$emit('change-linehead', seekPos)
-		},
-		onMouseMove(ev) {
-			if (this.messageSelectionEnabled)
-				return
+	pos = pos < 0 ? 0 : pos
+	pos = pos > 1 ? 1 : pos
 
-			const seekPos = this.calculateLineHeadPosition(ev, this.$refs.progress)
-			this.$emit('change-linehead', seekPos)
-		},
-		calculateLineHeadPosition(ev, element) {
-			const progressWidth = element.getBoundingClientRect().width
-			const leftPosition = element.getBoundingClientRect().left
-			let pos = (ev.clientX - leftPosition) / progressWidth
+	return pos
+}
 
-			pos = pos < 0 ? 0 : pos
-			pos = pos > 1 ? 1 : pos
+function onMouseMove(ev: MouseEvent) {
+	if (props.messageSelectionEnabled)
+		return
 
-			return pos
-		},
-	},
+	const seekPos = calculateLineHeadPosition(ev, progress.value!)
+	emit('change-linehead', seekPos)
+}
+
+function onMouseUp(ev: MouseEvent) {
+	if (props.messageSelectionEnabled)
+		return
+
+	isMouseDown.value = false
+	document.removeEventListener('mouseup', onMouseUp)
+	document.removeEventListener('mousemove', onMouseMove)
+	const seekPos = calculateLineHeadPosition(ev, progress.value!)
+	emit('change-linehead', seekPos)
+}
+
+function onMouseDown(ev: MouseEvent) {
+	if (props.messageSelectionEnabled)
+		return
+
+	isMouseDown.value = true
+	const seekPos = calculateLineHeadPosition(ev, progress.value!)
+	emit('change-linehead', seekPos)
+	document.addEventListener('mousemove', onMouseMove)
+	document.addEventListener('mouseup', onMouseUp)
 }
 </script>
 

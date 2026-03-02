@@ -8,7 +8,7 @@
  * character.
  * A couple of them are handled in a special way, such as the line endings
  * (CR, LF, and CR+LF, commonly known as end-of-line: EOLs), the tab (horizontal
- * tab) and its expansion based on what column it’s at (virtual space),
+ * tab) and its expansion based on what column it's at (virtual space),
  * and the end-of-file (eof) character.
  * As values are preprocessed before handling them, the actual characters LF,
  * CR, HT, and NUL (which is present as the replacement character), are
@@ -158,4 +158,4 @@ export const codes = {
 	byteOrderMarker: 65279,
 	// Unicode Specials block.
 	replacementCharacter: 65533, // `�`
-}
+} as const

@@ -1,24 +1,18 @@
-<script>
-import SvgIcon from '../../../../components/SvgIcon/SvgIcon'
+<script setup lang="ts">
+import type { MessageFile } from '@/types'
 
-import RoomFile from './RoomFile/RoomFile'
+import SvgIcon from '../../../../components/SvgIcon/SvgIcon.vue'
 
-export default {
-	name: 'RoomFiles',
-	components: {
-		SvgIcon,
-		RoomFile,
-	},
+import RoomFile from './RoomFile/RoomFile.vue'
 
-	props: {
-		files: { type: Array, required: true },
-	},
+defineProps<{
+	files: MessageFile[]
+}>()
 
-	emits: ['remove-file', 'reset-message'],
-
-	computed: {
-	},
-}
+defineEmits<{
+	'remove-file': [index: number]
+	'reset-message': []
+}>()
 </script>
 
 <template>

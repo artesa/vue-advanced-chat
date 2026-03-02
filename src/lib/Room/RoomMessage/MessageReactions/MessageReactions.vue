@@ -1,19 +1,17 @@
-<script>
-export default {
-	name: 'MessageReactions',
+<script setup lang="ts">
+import type { Message, StringNumber } from '@/types'
 
-	props: {
-		currentUserId: { type: [String, Number], required: true },
-		message: { type: Object, required: true },
-	},
+defineProps<{
+	currentUserId: StringNumber
+	message: Message
+}>()
 
-	emits: ['send-message-reaction'],
+const emit = defineEmits<{
+	'send-message-reaction': [payload: { emoji: { unicode: string }, reaction: StringNumber[] }]
+}>()
 
-	methods: {
-		sendMessageReaction(emoji, reaction) {
-			this.$emit('send-message-reaction', { emoji, reaction })
-		},
-	},
+function sendMessageReaction(emoji: { unicode: string }, reaction: StringNumber[]) {
+	emit('send-message-reaction', { emoji, reaction })
 }
 </script>
 

@@ -1,38 +1,31 @@
-<script>
-import SvgIcon from '../../components/SvgIcon/SvgIcon'
+<script setup lang="ts">
+import type { MessageFile } from '@/types'
+
+import { computed, onMounted, useTemplateRef } from 'vue'
+
+import SvgIcon from '../../components/SvgIcon/SvgIcon.vue'
 
 import { isImageFile, isVideoFile } from '../../utils/media-file'
 
-export default {
-	name: 'MediaPreview',
-	components: {
-		SvgIcon,
-	},
+const props = defineProps<{
+	file: MessageFile
+}>()
 
-	props: {
-		file: { type: Object, required: true },
-	},
+const emit = defineEmits<{
+	'close-media-preview': []
+}>()
 
-	emits: ['close-media-preview'],
+const modal = useTemplateRef<HTMLElement>('modal')
 
-	computed: {
-		isImage() {
-			return isImageFile(this.file)
-		},
-		isVideo() {
-			return isVideoFile(this.file)
-		},
-	},
+const isImage = computed(() => isImageFile(props.file))
+const isVideo = computed(() => isVideoFile(props.file))
 
-	mounted() {
-		this.$refs.modal.focus()
-	},
+onMounted(() => {
+	modal.value?.focus()
+})
 
-	methods: {
-		closeModal() {
-			this.$emit('close-media-preview')
-		},
-	},
+function closeModal() {
+	emit('close-media-preview')
 }
 </script>
 

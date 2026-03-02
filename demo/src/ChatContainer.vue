@@ -1,18 +1,17 @@
 <script>
-import { register } from '@artesa/vue-advanced-chat'
+import { VueAdvancedChat } from '@artesa/vue-advanced-chat'
 import logoAvatar from '@/assets/logo.png'
 import {
 	messagesByRoom as seedMessages,
 	rooms as seedRooms,
-	users as seedUsers
+	users as seedUsers,
 } from '@/data/mock-data'
-
-register()
+import '@artesa/vue-advanced-chat/dist/style.css'
 
 const dateFormatter = new Intl.DateTimeFormat('en-GB', {
 	day: 'numeric',
 	month: 'long',
-	year: 'numeric'
+	year: 'numeric',
 })
 
 function formatTime(date) {
@@ -20,10 +19,14 @@ function formatTime(date) {
 }
 
 export default {
+	components: {
+		VueAdvancedChat,
+	},
+
 	props: {
 		currentUserId: { type: String, required: true },
 		theme: { type: String, required: true },
-		isDevice: { type: Boolean, required: true }
+		isDevice: { type: Boolean, required: true },
 	},
 
 	emits: ['showDemoOptions'],
@@ -59,25 +62,25 @@ export default {
 			roomActions: [
 				{ name: 'inviteUser', title: 'Invite User' },
 				{ name: 'removeUser', title: 'Remove User' },
-				{ name: 'deleteRoom', title: 'Delete Room' }
+				{ name: 'deleteRoom', title: 'Delete Room' },
 			],
 			menuActions: [
 				{ name: 'inviteUser', title: 'Invite User' },
 				{ name: 'removeUser', title: 'Remove User' },
-				{ name: 'deleteRoom', title: 'Delete Room' }
+				{ name: 'deleteRoom', title: 'Delete Room' },
 			],
 			messageSelectionActions: [{ name: 'deleteMessages', title: 'Delete' }],
 			styles: { container: { borderRadius: '4px' } },
 			templatesText: [
 				{
 					tag: 'help',
-					text: 'This is the help template text.'
+					text: 'This is the help template text.',
 				},
 				{
 					tag: 'action',
-					text: 'This is the action template text.'
-				}
-			]
+					text: 'This is the action template text.',
+				},
+			],
 		}
 	},
 
@@ -87,7 +90,7 @@ export default {
 		},
 		screenHeight() {
 			return this.isDevice ? `${window.innerHeight}px` : 'calc(100vh - 80px)'
-		}
+		},
 	},
 
 	mounted() {
@@ -95,41 +98,42 @@ export default {
 	},
 
 	methods: {
+		buildRooms() {
+			return this.allRooms
+				.filter(room => room.users.includes(this.currentUserId))
+				.map((room) => {
+					const roomUsers = room.users
+						.map(userId => this.allUsers.find(u => u._id === userId))
+						.filter(Boolean)
+
+					const otherUsers = roomUsers.filter(u => u._id !== this.currentUserId)
+					const roomName =
+						otherUsers.map(u => u.username).join(', ') || 'Yourself'
+					const avatar =
+						roomUsers.length === 2 ? otherUsers[0]?.avatar : logoAvatar
+
+					const msgs = this.allMessages[room.roomId] || []
+					const lastMsg = msgs[msgs.length - 1]
+
+					return {
+						roomId: room.roomId,
+						roomName,
+						avatar,
+						users: roomUsers,
+						index: room.lastUpdated,
+						lastMessage: lastMsg
+							? this.formatLastMessage(lastMsg, roomUsers)
+							: undefined,
+						typingUsers: [],
+					}
+				})
+		},
+
 		fetchRooms() {
 			this.loadingRooms = true
 
 			setTimeout(() => {
-				this.rooms = this.allRooms
-					.filter(room => room.users.includes(this.currentUserId))
-					.map(room => {
-						const roomUsers = room.users
-							.map(userId => this.allUsers.find(u => u._id === userId))
-							.filter(Boolean)
-
-						const otherUsers = roomUsers.filter(
-							u => u._id !== this.currentUserId
-						)
-						const roomName =
-							otherUsers.map(u => u.username).join(', ') || 'Yourself'
-						const avatar =
-							roomUsers.length === 2 ? otherUsers[0]?.avatar : logoAvatar
-
-						const msgs = this.allMessages[room.roomId] || []
-						const lastMsg = msgs[msgs.length - 1]
-
-						return {
-							roomId: room.roomId,
-							roomName,
-							avatar,
-							users: roomUsers,
-							index: room.lastUpdated,
-							lastMessage: lastMsg
-								? this.formatLastMessage(lastMsg, roomUsers)
-								: undefined,
-							typingUsers: []
-						}
-					})
-
+				this.rooms = this.buildRooms()
 				this.loadingRooms = false
 				this.roomsLoaded = true
 			}, 200)
@@ -165,7 +169,7 @@ export default {
 				timestamp: formatTime(date),
 				date: dateFormatter.format(date),
 				username: room.users?.find(u => u._id === message.senderId)?.username,
-				distributed: true
+				distributed: true,
 			}
 		},
 
@@ -192,7 +196,7 @@ export default {
 				username,
 				distributed: true,
 				seen: message.senderId === this.currentUserId,
-				new: false
+				new: false,
 			}
 		},
 
@@ -201,7 +205,7 @@ export default {
 				_id: `msg-${this.nextMessageId++}`,
 				senderId: this.currentUserId,
 				content,
-				timestamp: new Date()
+				timestamp: new Date(),
 			}
 
 			if (files) {
@@ -212,7 +216,7 @@ export default {
 				newMessage.replyMessage = {
 					_id: replyMessage._id,
 					content: replyMessage.content,
-					senderId: replyMessage.senderId
+					senderId: replyMessage.senderId,
 				}
 			}
 
@@ -224,11 +228,11 @@ export default {
 
 			if (this.selectedRoom?.roomId === roomId) {
 				this.messages = this.allMessages[roomId].map(msg =>
-					this.formatMessage(this.selectedRoom, msg)
+					this.formatMessage(this.selectedRoom, msg),
 				)
 			}
 
-			this.fetchRooms()
+			this.rooms = this.buildRooms()
 		},
 
 		editMessage({ messageId, newContent, roomId, files }) {
@@ -242,16 +246,17 @@ export default {
 			message.edited = true
 			if (files) {
 				message.files = this.formattedFiles(files)
-			} else {
+			}
+			else {
 				delete message.files
 			}
 
 			if (this.selectedRoom?.roomId === roomId) {
 				this.messages = roomMessages.map(m =>
-					this.formatMessage(this.selectedRoom, m)
+					this.formatMessage(this.selectedRoom, m),
 				)
 			}
-			this.fetchRooms()
+			this.rooms = this.buildRooms()
 		},
 
 		deleteMessage({ message, roomId }) {
@@ -268,10 +273,10 @@ export default {
 
 			if (this.selectedRoom?.roomId === roomId) {
 				this.messages = roomMessages.map(m =>
-					this.formatMessage(this.selectedRoom, m)
+					this.formatMessage(this.selectedRoom, m),
 				)
 			}
-			this.fetchRooms()
+			this.rooms = this.buildRooms()
 		},
 
 		sendMessageReaction({ reaction, remove, messageId, roomId }) {
@@ -283,16 +288,17 @@ export default {
 
 			if (!message.reactions) message.reactions = {}
 
-			const emoji = reaction.unicode
+			const emoji = reaction
 			if (!message.reactions[emoji]) message.reactions[emoji] = []
 
 			if (remove) {
 				message.reactions[emoji] = message.reactions[emoji].filter(
-					id => id !== this.currentUserId
+					id => id !== this.currentUserId,
 				)
 				if (message.reactions[emoji].length === 0)
 					delete message.reactions[emoji]
-			} else {
+			}
+			else {
 				if (!message.reactions[emoji].includes(this.currentUserId)) {
 					message.reactions[emoji].push(this.currentUserId)
 				}
@@ -300,7 +306,7 @@ export default {
 
 			if (this.selectedRoom?.roomId === roomId) {
 				this.messages = roomMessages.map(m =>
-					this.formatMessage(this.selectedRoom, m)
+					this.formatMessage(this.selectedRoom, m),
 				)
 			}
 		},
@@ -321,14 +327,14 @@ export default {
 				_id: `user-${Date.now()}`,
 				username: this.addRoomUsername,
 				avatar: '',
-				status: { state: 'offline', lastChanged: '' }
+				status: { state: 'offline', lastChanged: '' },
 			}
 			this.allUsers.push(newUser)
 
 			const newRoom = {
 				roomId: `room-${this.nextRoomId++}`,
 				users: [this.currentUserId, newUser._id],
-				lastUpdated: Date.now()
+				lastUpdated: Date.now(),
 			}
 			this.allRooms.push(newRoom)
 			this.allMessages[newRoom.roomId] = []
@@ -346,7 +352,7 @@ export default {
 				_id: `user-${Date.now()}`,
 				username: this.invitedUsername,
 				avatar: '',
-				status: { state: 'offline', lastChanged: '' }
+				status: { state: 'offline', lastChanged: '' },
 			}
 			this.allUsers.push(newUser)
 
@@ -380,11 +386,11 @@ export default {
 		},
 
 		openUserTag({ user }) {
-			const existingRoom = this.rooms.find(room => {
+			const existingRoom = this.rooms.find((room) => {
 				if (room.users.length !== 2) return false
 				return (
-					room.users.some(u => u._id === user._id) &&
-					room.users.some(u => u._id === this.currentUserId)
+					room.users.some(u => u._id === user._id)
+					&& room.users.some(u => u._id === this.currentUserId)
 				)
 			})
 
@@ -396,7 +402,7 @@ export default {
 			const newRoom = {
 				roomId: `room-${this.nextRoomId++}`,
 				users: [this.currentUserId, user._id],
-				lastUpdated: Date.now()
+				lastUpdated: Date.now(),
 			}
 			this.allRooms.push(newRoom)
 			this.allMessages[newRoom.roomId] = []
@@ -411,13 +417,13 @@ export default {
 		formattedFiles(files) {
 			const formattedFiles = []
 
-			files.forEach(file => {
+			files.forEach((file) => {
 				const messageFile = {
 					name: file.name,
 					size: file.size,
 					type: file.type,
 					extension: file.extension || file.type,
-					url: file.localUrl || file.url
+					url: file.localUrl || file.url,
 				}
 
 				if (file.audio) {
@@ -448,7 +454,7 @@ export default {
 
 		messageSelectionActionHandler({ action, messages, roomId }) {
 			if (action.name === 'deleteMessages') {
-				messages.forEach(message => {
+				messages.forEach((message) => {
 					this.deleteMessage({ message, roomId })
 				})
 			}
@@ -462,8 +468,8 @@ export default {
 			this.invitedUsername = ''
 			this.removeRoomId = null
 			this.removeUserId = ''
-		}
-	}
+		},
+	},
 }
 </script>
 
@@ -498,38 +504,36 @@ export default {
 			<button class="button-cancel" @click="removeRoomId = null">Cancel</button>
 		</form>
 
-		<vue-advanced-chat
+		<VueAdvancedChat
 			:height="screenHeight"
 			:theme="theme"
-			:styles="JSON.stringify(styles)"
+			:styles="styles"
 			:current-user-id="currentUserId"
 			:room-id="roomId"
-			:rooms="JSON.stringify(loadedRooms)"
+			:rooms="loadedRooms"
 			:loading-rooms="loadingRooms"
 			:rooms-loaded="roomsLoaded"
-			:messages="JSON.stringify(messages)"
+			:messages="messages"
 			:messages-loaded="messagesLoaded"
 			:room-message="roomMessage"
-			:room-actions="JSON.stringify(roomActions)"
-			:menu-actions="JSON.stringify(menuActions)"
-			:message-selection-actions="JSON.stringify(messageSelectionActions)"
-			:templates-text="JSON.stringify(templatesText)"
+			:room-actions="roomActions"
+			:menu-actions="menuActions"
+			:message-selection-actions="messageSelectionActions"
+			:templates-text="templatesText"
 			@fetch-more-rooms="fetchMoreRooms"
-			@fetch-messages="fetchMessages($event.detail[0])"
-			@send-message="sendMessage($event.detail[0])"
-			@edit-message="editMessage($event.detail[0])"
-			@delete-message="deleteMessage($event.detail[0])"
-			@open-file="openFile($event.detail[0])"
-			@open-user-tag="openUserTag($event.detail[0])"
-			@add-room="addRoom($event.detail[0])"
-			@room-action-handler="menuActionHandler($event.detail[0])"
-			@menu-action-handler="menuActionHandler($event.detail[0])"
-			@message-selection-action-handler="
-				messageSelectionActionHandler($event.detail[0])
-			"
-			@send-message-reaction="sendMessageReaction($event.detail[0])"
-			@typing-message="typingMessage($event.detail[0])"
-			@toggle-rooms-list="$emit('showDemoOptions', $event.detail[0].opened)"
+			@fetch-messages="fetchMessages"
+			@send-message="sendMessage"
+			@edit-message="editMessage"
+			@delete-message="deleteMessage"
+			@open-file="openFile"
+			@open-user-tag="openUserTag"
+			@add-room="addRoom"
+			@room-action-handler="menuActionHandler"
+			@menu-action-handler="menuActionHandler"
+			@message-selection-action-handler="messageSelectionActionHandler"
+			@send-message-reaction="sendMessageReaction"
+			@typing-message="typingMessage"
+			@toggle-rooms-list="$emit('showDemoOptions', $event.opened)"
 		/>
 	</div>
 </template>

@@ -1,12 +1,14 @@
-export default (room, currentUserId, textMessages) => {
+import type { Room, TextMessages } from '@/types'
+
+export default (room: Room, currentUserId: string, textMessages: TextMessages): string | undefined => {
 	if (room.typingUsers && room.typingUsers.length) {
 		const typingUsers = room.users.filter((user) => {
 			if (user._id === currentUserId)
-				return
-			if (!room.typingUsers.includes(user._id))
-				return
+				return false
+			if (!room.typingUsers!.includes(user._id))
+				return false
 			if (user.status && user.status.state === 'offline')
-				return
+				return false
 			return true
 		})
 

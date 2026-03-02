@@ -2,8 +2,57 @@
 
 import Mp3Encoder from './mp3-encoder'
 
+declare global {
+	interface Window {
+		webkitAudioContext: typeof AudioContext
+	}
+}
+
+export interface RecorderOptions {
+	beforeRecording?: (message: string) => void
+	pauseRecording?: (message: string) => void
+	afterRecording?: (record: RecordResult) => void
+	micFailed?: (error: Error) => void
+	bitRate?: number
+	sampleRate?: number
+}
+
+export interface RecordResult {
+	id: number
+	blob: Blob
+	url: string
+	duration: number
+}
+
 export default class {
-	constructor(options = {}) {
+	private beforeRecording?: (message: string) => void
+	private pauseRecording?: (message: string) => void
+	private afterRecording?: (record: RecordResult) => void
+	private micFailed?: (error: Error) => void
+
+	private encoderOptions: {
+		bitRate: number | undefined
+		sampleRate: number | undefined
+	}
+
+	private bufferSize: number
+	records: RecordResult[]
+
+	isPause: boolean
+	isRecording: boolean
+
+	duration: number
+	volume: number | string
+
+	private _duration: number
+
+	private context!: AudioContext
+	private input!: MediaStreamAudioSourceNode
+	private processor!: ScriptProcessorNode
+	private stream!: MediaStream
+	private lameEncoder!: Mp3Encoder
+
+	constructor(options: RecorderOptions = {}) {
 		this.beforeRecording = options.beforeRecording
 		this.pauseRecording = options.pauseRecording
 		this.afterRecording = options.afterRecording
@@ -26,8 +75,8 @@ export default class {
 		this._duration = 0
 	}
 
-	start() {
-		const constraints = {
+	start(): void {
+		const constraints: MediaStreamConstraints = {
 			video: false,
 			audio: {
 				channelCount: 1,
@@ -46,15 +95,13 @@ export default class {
 		this.isRecording = true
 	}
 
-	stop() {
+	stop(): void {
 		this.stream.getTracks().forEach(track => track.stop())
 		this.input.disconnect()
 		this.processor.disconnect()
 		this.context.close()
 
-		let record = null
-
-		record = this.lameEncoder.finish()
+		const record = this.lameEncoder.finish() as RecordResult
 
 		record.duration = this.duration
 		this.records.push(record)
@@ -68,7 +115,7 @@ export default class {
 		this.afterRecording && this.afterRecording(record)
 	}
 
-	pause() {
+	pause(): void {
 		this.stream.getTracks().forEach(track => track.stop())
 		this.input.disconnect()
 		this.processor.disconnect()
@@ -79,7 +126,7 @@ export default class {
 		this.pauseRecording && this.pauseRecording('pause recording')
 	}
 
-	_micCaptured(stream) {
+	private _micCaptured(stream: MediaStream): void {
 		this.context = new (window.AudioContext || window.webkitAudioContext)()
 		this.duration = this._duration
 		this.input = this.context.createMediaStreamSource(stream)
@@ -94,14 +141,14 @@ export default class {
 				.getSettings()
 				.sampleRate
 
-			this.lameEncoder = new Mp3Encoder(this.encoderOptions)
+			this.lameEncoder = new Mp3Encoder(this.encoderOptions as { bitRate: number, sampleRate: number })
 		}
 
 		if (!this.lameEncoder) {
-			this.lameEncoder = new Mp3Encoder(this.encoderOptions)
+			this.lameEncoder = new Mp3Encoder(this.encoderOptions as { bitRate: number, sampleRate: number })
 		}
 
-		this.processor.onaudioprocess = (ev) => {
+		this.processor.onaudioprocess = (ev: AudioProcessingEvent) => {
 			const sample = ev.inputBuffer.getChannelData(0)
 			let sum = 0.0
 
@@ -114,7 +161,7 @@ export default class {
 			}
 
 			this.duration
-				= Number.parseFloat(this._duration)
+				= Number.parseFloat(String(this._duration))
 					+ Number.parseFloat(this.context.currentTime.toFixed(2))
 			this.volume = Math.sqrt(sum / sample.length).toFixed(2)
 		}
@@ -123,7 +170,7 @@ export default class {
 		this.processor.connect(this.context.destination)
 	}
 
-	_micError(error) {
+	private _micError(error: Error): void {
 		this.micFailed && this.micFailed(error)
 	}
 }

@@ -1,6 +1,10 @@
-<script>
-import FormatMessage from '../../../../components/FormatMessage/FormatMessage'
-import SvgIcon from '../../../../components/SvgIcon/SvgIcon'
+<script setup lang="ts">
+import type { LinkOptions, Message, MessageFile, RoomUser, TextFormatting } from '@/types'
+
+import { computed } from 'vue'
+import FormatMessage from '../../../../components/FormatMessage/FormatMessage.vue'
+
+import SvgIcon from '../../../../components/SvgIcon/SvgIcon.vue'
 
 import {
 	isAudioFile,
@@ -8,49 +12,39 @@ import {
 	isVideoFile,
 } from '../../../../utils/media-file'
 
-import AudioPlayer from '../AudioPlayer/AudioPlayer'
+import AudioPlayer from '../AudioPlayer/AudioPlayer.vue'
 
-export default {
-	name: 'MessageReply',
-	components: { AudioPlayer, SvgIcon, FormatMessage },
+const props = defineProps<{
+	message: Message
+	textFormatting: TextFormatting
+	linkOptions: LinkOptions
+	roomUsers: RoomUser[]
+}>()
 
-	props: {
-		message: { type: Object, required: true },
-		textFormatting: { type: Object, required: true },
-		linkOptions: { type: Object, required: true },
-		roomUsers: { type: Array, required: true },
-	},
+const replyUsername = computed(() => {
+	const { senderId } = props.message.replyMessage!
+	const replyUser = props.roomUsers.find(user => user._id === senderId)
+	return replyUser ? replyUser.username : ''
+})
 
-	computed: {
-		replyUsername() {
-			const { senderId } = this.message.replyMessage
-			const replyUser = this.roomUsers.find(user => user._id === senderId)
-			return replyUser ? replyUser.username : ''
-		},
-		firstFile() {
-			return this.message.replyMessage?.files?.length
-				? this.message.replyMessage.files[0]
-				: {}
-		},
-		isAudio() {
-			return isAudioFile(this.firstFile)
-		},
-		isImage() {
-			return isImageFile(this.firstFile)
-		},
-		isVideo() {
-			return isVideoFile(this.firstFile)
-		},
-		isOtherFile() {
-			return (
-				this.message.replyMessage.files?.length
-				&& !this.isAudio
-				&& !this.isVideo
-				&& !this.isImage
-			)
-		},
-	},
-}
+const firstFile = computed(() => {
+	return (props.message.replyMessage?.files?.length
+		? props.message.replyMessage.files[0]
+		: {}) as MessageFile
+})
+
+const isAudio = computed(() => isAudioFile(firstFile.value))
+const isImage = computed(() => isImageFile(firstFile.value))
+const isVideo = computed(() => isVideoFile(firstFile.value))
+
+const isOtherFile = computed(() => {
+	return (
+		props.message.replyMessage?.files?.length
+		&& !isAudio.value
+		&& !isVideo.value
+		&& !isImage.value
+	)
+})
 </script>
 
 <template>
@@ -78,8 +72,6 @@ export default {
 			v-else-if="isAudio"
 			:src="firstFile.url"
 			:message-selection-enabled="false"
-			@update-progress-time="progressTime = $event"
-			@hover-audio-progress="hoverAudioProgress = $event"
 		>
 			<template v-for="(idx, name) in $slots" #[name]="data">
 				<slot :name="name" v-bind="data" />
@@ -105,8 +97,8 @@ export default {
 
 		<div class="vac-reply-content">
 			<FormatMessage
-				:message-id="message.replyMessage._id"
-				:content="message.replyMessage.content"
+				:message-id="message.replyMessage?._id"
+				:content="message.replyMessage?.content ?? ''"
 				:users="roomUsers"
 				:text-formatting="textFormatting"
 				:link-options="linkOptions"

@@ -1,27 +1,27 @@
-import { defineConfig } from 'vite'
+import { resolve } from 'node:path'
 import vue from '@vitejs/plugin-vue'
-import { resolve } from 'path'
+import { defineConfig } from 'vite'
 
 export default defineConfig({
 	plugins: [
 		vue({
 			template: {
 				compilerOptions: {
-					isCustomElement: tagName => {
-						return tagName === 'vue-advanced-chat' || tagName === 'emoji-picker'
-					}
-				}
-			}
-		})
+					isCustomElement: (tagName) => {
+						return tagName === 'emoji-picker'
+					},
+				},
+			},
+		}),
 	],
 	resolve: {
 		extensions: ['.mjs', '.js', '.ts', '.jsx', '.tsx', '.json', '.vue'],
 		alias: {
-			'@': resolve(__dirname, './src')
-		}
+			'@': resolve(__dirname, './src'),
+		},
 	},
 	server: {
-		open: '/'
+		strictPort: false,
 	},
-	base: process.env.NODE_ENV === 'production' ? '/vue-advanced-chat/' : '/'
+	base: process.env.NODE_ENV === 'production' ? '/vue-advanced-chat/' : '/',
 })

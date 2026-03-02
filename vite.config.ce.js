@@ -5,18 +5,13 @@ import dts from 'vite-plugin-dts'
 
 export default defineConfig({
 	plugins: [
-		vue({
-			template: {
-				compilerOptions: {
-					isCustomElement: tag => tag === 'emoji-picker'
-				}
-			}
-		}),
+		vue({ features: { customElement: true } }),
 		dts({ tsconfigPath: './tsconfig.json' })
 	],
 	build: {
+		outDir: 'dist/ce',
 		lib: {
-			entry: resolve(__dirname, 'src/index.ts'),
+			entry: resolve(__dirname, 'src/index.ce.ts'),
 			name: 'vue-advanced-chat',
 			formats: ['es'],
 			fileName: 'vue-advanced-chat',

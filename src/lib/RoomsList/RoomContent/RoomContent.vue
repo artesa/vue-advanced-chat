@@ -1,116 +1,108 @@
-<script>
-import FormatMessage from '../../../components/FormatMessage/FormatMessage'
-import SvgIcon from '../../../components/SvgIcon/SvgIcon'
+<script setup lang="ts">
+import type { CustomAction, LinkOptions, Room, TextFormatting, TextMessages } from '@/types'
 
-import { isAudioFile } from '../../../utils/media-file'
-import vClickOutside from '../../../utils/on-click-outside'
-import typingText from '../../../utils/typing-text'
+import { computed, ref } from 'vue'
+import FormatMessage from '@/components/FormatMessage/FormatMessage.vue'
 
-export default {
-	name: 'RoomsContent',
-	components: {
-		SvgIcon,
-		FormatMessage,
-	},
+import SvgIcon from '@/components/SvgIcon/SvgIcon.vue'
+import { isAudioFile } from '@/utils/media-file'
+import vClickOutside from '@/utils/on-click-outside'
 
-	directives: {
-		clickOutside: vClickOutside,
-	},
+import typingText from '@/utils/typing-text'
 
-	props: {
-		currentUserId: { type: [String, Number], required: true },
-		room: { type: Object, required: true },
-		textFormatting: { type: Object, required: true },
-		linkOptions: { type: Object, required: true },
-		textMessages: { type: Object, required: true },
-		roomActions: { type: Array, required: true },
-	},
+const props = defineProps<{
+	currentUserId: string | number
+	room: Room
+	textFormatting: TextFormatting
+	linkOptions: LinkOptions
+	textMessages: TextMessages
+	roomActions: CustomAction[]
+}>()
 
-	emits: ['room-action-handler'],
+const emit = defineEmits<{
+	'room-action-handler': [payload: { action: CustomAction, roomId: string }]
+}>()
 
-	data() {
-		return {
-			roomMenuOpened: null,
+const roomMenuOpened = ref<string | null>(null)
+
+const typingUsers = computed(() => {
+	return typingText(props.room, String(props.currentUserId), props.textMessages)
+})
+
+const getLastMessage = computed(() => {
+	const isTyping = typingUsers.value
+	if (isTyping)
+		return isTyping
+
+	const content = props.room.lastMessage!.content
+
+	if (props.room.users.length <= 2) {
+		return content
+	}
+
+	const user = props.room.users.find(
+		user => user._id === props.room.lastMessage!.senderId,
+	)
+
+	if (props.room.lastMessage!.username) {
+		return `${props.room.lastMessage!.username} - ${content}`
+	}
+	else if (!user || user._id === props.currentUserId) {
+		return content
+	}
+
+	return `${user.username} - ${content}`
+})
+
+const userStatus = computed(() => {
+	if (!props.room.users || props.room.users.length !== 2)
+		return
+
+	const user = props.room.users.find(u => u._id !== props.currentUserId)
+	if (user && user.status)
+		return user.status.state
+
+	return null
+})
+
+const isMessageCheckmarkVisible = computed(() => {
+	return (
+		!typingUsers.value
+		&& props.room.lastMessage
+		&& !props.room.lastMessage.deleted
+		&& props.room.lastMessage.senderId === props.currentUserId
+		&& (props.room.lastMessage.saved
+			|| props.room.lastMessage.distributed
+			|| props.room.lastMessage.seen)
+	)
+})
+
+const formattedDuration = computed(() => {
+	const file = props.room.lastMessage?.files?.[0]
+	if (file) {
+		if (!file.duration) {
+			return `${file.name}.${file.extension}`
 		}
-	},
 
-	computed: {
-		getLastMessage() {
-			const isTyping = this.typingUsers
-			if (isTyping)
-				return isTyping
+		let s = Math.floor(file.duration)
+		return (s - (s %= 60)) / 60 + (s > 9 ? ':' : ':0') + s
+	}
+	return ''
+})
 
-			const content = this.room.lastMessage.content
+const isAudio = computed(() => {
+	return props.room.lastMessage!.files
+		? isAudioFile(props.room.lastMessage!.files[0])
+		: false
+})
 
-			if (this.room.users.length <= 2) {
-				return content
-			}
+function roomActionHandler(action: CustomAction): void {
+	closeRoomMenu()
+	emit('room-action-handler', { action, roomId: props.room.roomId })
+}
 
-			const user = this.room.users.find(
-				user => user._id === this.room.lastMessage.senderId,
-			)
-
-			if (this.room.lastMessage.username) {
-				return `${this.room.lastMessage.username} - ${content}`
-			}
-			else if (!user || user._id === this.currentUserId) {
-				return content
-			}
-
-			return `${user.username} - ${content}`
-		},
-		userStatus() {
-			if (!this.room.users || this.room.users.length !== 2)
-				return
-
-			const user = this.room.users.find(u => u._id !== this.currentUserId)
-			if (user && user.status)
-				return user.status.state
-
-			return null
-		},
-		typingUsers() {
-			return typingText(this.room, this.currentUserId, this.textMessages)
-		},
-		isMessageCheckmarkVisible() {
-			return (
-				!this.typingUsers
-				&& this.room.lastMessage
-				&& !this.room.lastMessage.deleted
-				&& this.room.lastMessage.senderId === this.currentUserId
-				&& (this.room.lastMessage.saved
-					|| this.room.lastMessage.distributed
-					|| this.room.lastMessage.seen)
-			)
-		},
-		formattedDuration() {
-			const file = this.room.lastMessage?.files?.[0]
-			if (file) {
-				if (!file.duration) {
-					return `${file.name}.${file.extension}`
-				}
-
-				let s = Math.floor(file.duration)
-				return (s - (s %= 60)) / 60 + (s > 9 ? ':' : ':0') + s
-			}
-			return ''
-		},
-		isAudio() {
-			return this.room.lastMessage.files
-				? isAudioFile(this.room.lastMessage.files[0])
-				: false
-		},
-	},
-
-	methods: {
-		roomActionHandler(action) {
-			this.closeRoomMenu()
-			this.$emit('room-action-handler', { action, roomId: this.room.roomId })
-		},
-		closeRoomMenu() {
-			this.roomMenuOpened = null
-		},
-	},
+function closeRoomMenu(): void {
+	roomMenuOpened.value = null
 }
 </script>
 
@@ -151,11 +143,11 @@ export default {
 						<slot :name="`checkmark-icon_${room.roomId}`">
 							<SvgIcon
 								:name="
-									room.lastMessage.distributed
+									room.lastMessage?.distributed
 										? 'double-checkmark'
 										: 'checkmark'
 								"
-								:param="room.lastMessage.seen ? 'seen' : ''"
+								:param="room.lastMessage?.seen ? 'seen' : ''"
 								class="vac-icon-check"
 							/>
 						</slot>

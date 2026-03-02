@@ -1,44 +1,43 @@
-<script>
-import FormatMessage from '../../../../components/FormatMessage/FormatMessage'
-import ProgressBar from '../../../../components/ProgressBar/ProgressBar'
-import SvgIcon from '../../../../components/SvgIcon/SvgIcon'
+<script setup lang="ts">
+import type { LinkOptions, Message, MessageFile as MessageFileType, RoomUser, TextFormatting } from '@/types'
 
-import { isImageVideoFile } from '../../../../utils/media-file'
+import { computed } from 'vue'
+import FormatMessage from '@/components/FormatMessage/FormatMessage.vue'
+import ProgressBar from '@/components/ProgressBar/ProgressBar.vue'
 
-import MessageFile from './MessageFile/MessageFile'
+import SvgIcon from '@/components/SvgIcon/SvgIcon.vue'
 
-export default {
-	name: 'MessageFiles',
-	components: { SvgIcon, FormatMessage, ProgressBar, MessageFile },
+import { isImageVideoFile } from '@/utils/media-file'
 
-	props: {
-		currentUserId: { type: [String, Number], required: true },
-		message: { type: Object, required: true },
-		roomUsers: { type: Array, required: true },
-		textFormatting: { type: Object, required: true },
-		linkOptions: { type: Object, required: true },
-		messageSelectionEnabled: { type: Boolean, required: true },
-	},
+import MessageFile from './MessageFile/MessageFile.vue'
 
-	emits: ['open-file', 'open-user-tag'],
+const props = defineProps<{
+	currentUserId: string | number
+	message: Message
+	roomUsers: RoomUser[]
+	textFormatting: TextFormatting
+	linkOptions: LinkOptions
+	messageSelectionEnabled: boolean
+}>()
 
-	computed: {
-		imageVideoFiles() {
-			return this.message.files.filter(file => isImageVideoFile(file))
-		},
-		otherFiles() {
-			return this.message.files.filter(file => !isImageVideoFile(file))
-		},
-	},
+const emit = defineEmits<{
+	'open-file': [payload: { file: MessageFileType, action: string }]
+	'open-user-tag': [user: RoomUser | undefined]
+}>()
 
-	methods: {
-		openFile(event, file, action) {
-			if (!this.messageSelectionEnabled) {
-				event.stopPropagation()
-				this.$emit('open-file', { file, action })
-			}
-		},
-	},
+const imageVideoFiles = computed(() => {
+	return props.message.files!.filter(file => isImageVideoFile(file))
+})
+
+const otherFiles = computed(() => {
+	return props.message.files!.filter(file => !isImageVideoFile(file))
+})
+
+function openFile(event: Event, file: MessageFileType, action: string): void {
+	if (!props.messageSelectionEnabled) {
+		event.stopPropagation()
+		emit('open-file', { file, action })
+	}
 }
 </script>
 
@@ -65,13 +64,13 @@ export default {
 			class="vac-file-wrapper"
 		>
 			<ProgressBar
-				v-if="file.progress >= 0"
+				v-if="file.progress != null && file.progress >= 0"
 				:progress="file.progress"
 				:style="{ top: '44px' }"
 			/>
 			<div
 				class="vac-file-container"
-				:class="{ 'vac-file-container-progress': file.progress >= 0 }"
+				:class="{ 'vac-file-container-progress': file.progress != null && file.progress >= 0 }"
 				@click="openFile($event, file, 'download')"
 			>
 				<div class="vac-svg-button">
@@ -90,7 +89,7 @@ export default {
 
 		<FormatMessage
 			:message-id="message._id"
-			:content="message.content"
+			:content="message.content ?? ''"
 			:users="roomUsers"
 			:text-formatting="textFormatting"
 			:link-options="linkOptions"

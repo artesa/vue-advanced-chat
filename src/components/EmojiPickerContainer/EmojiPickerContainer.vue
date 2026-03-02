@@ -1,70 +1,72 @@
-<script>
+<script setup lang="ts">
 import { OnClickOutside } from '@vueuse/components'
-import { findParentBySelector } from '../../utils/element-selector'
-import SvgIcon from '../SvgIcon/SvgIcon'
+import { ref, useTemplateRef, watch } from 'vue'
+import SvgIcon from '@/components/SvgIcon/SvgIcon.vue'
+import { findParentBySelector } from '@/utils/element-selector'
 
-export default {
-	name: 'EmojiPickerContainer',
-	components: {
-		SvgIcon,
-		OnClickOutside,
-	},
+const props = withDefaults(defineProps<{
+	emojiOpened?: boolean
+	emojiReaction?: boolean
+	positionTop?: boolean
+	positionRight?: boolean
+	messageId?: string
+	emojiDataSource?: string
+	teleportTarget?: HTMLElement
+}>(), {
+	emojiOpened: false,
+	emojiReaction: false,
+	positionTop: false,
+	positionRight: false,
+	messageId: '',
+	emojiDataSource: undefined,
+	teleportTarget: undefined,
+})
 
-	props: {
-		emojiOpened: { type: Boolean, default: false },
-		emojiReaction: { type: Boolean, default: false },
-		positionTop: { type: Boolean, default: false },
-		positionRight: { type: Boolean, default: false },
-		messageId: { type: String, default: '' },
-		emojiDataSource: { type: String, default: undefined },
-		teleportTarget: { type: Object, default: undefined },
-	},
+const emit = defineEmits<{
+	'add-emoji': [payload: { unicode: string }]
+	'open-emoji': [value: boolean]
+	'close-emoji': []
+}>()
 
-	emits: ['add-emoji', 'open-emoji', 'close-emoji'],
+const emojiPickerHeight = ref(320)
+const emojiPickerTop = ref(0)
+const emojiPickerRight = ref('')
 
-	data() {
-		return {
-			emojiPickerHeight: 320,
-			emojiPickerTop: 0,
-			emojiPickerRight: '',
-		}
-	},
+const root = useTemplateRef<HTMLElement>('root')
+const emojiPicker = useTemplateRef<HTMLElement>('emojiPicker')
 
-	watch: {
-		emojiOpened(val) {
-			if (val) {
-				setTimeout(() => {
-					this.addCustomStyling()
+watch(() => props.emojiOpened, (val) => {
+	if (val) {
+		setTimeout(() => {
+			addCustomStyling()
 
-					this.$refs.emojiPicker.shadowRoot.addEventListener(
-						'emoji-click',
-						({ detail }) => {
-							this.$emit('add-emoji', {
-								unicode: detail.unicode,
-							})
-						},
-					)
-				}, 0)
-			}
-		},
-	},
+			emojiPicker.value!.shadowRoot!.addEventListener(
+				'emoji-click',
+				({ detail }: any) => {
+					emit('add-emoji', {
+						unicode: detail.unicode,
+					})
+				},
+			)
+		}, 0)
+	}
+})
 
-	methods: {
-		addCustomStyling() {
-			const picker = `.picker {
+function addCustomStyling(): void {
+	const picker = `.picker {
 				border: none;
 			}`
 
-			const nav = `.nav {
+	const nav = `.nav {
 				overflow-x: auto;
 			}`
 
-			const searchBox = `.search-wrapper {
+	const searchBox = `.search-wrapper {
 				padding-right: 2px;
 				padding-left: 2px;
 			}`
 
-			const search = `input.search {
+	const search = `input.search {
 				height: 32px;
 				font-size: 14px;
 				border-radius: 10rem;
@@ -75,59 +77,60 @@ export default {
 				color: var(--chat-color);
 			}`
 
-			const style = document.createElement('style')
-			style.textContent = picker + nav + searchBox + search
-			this.$refs.emojiPicker.shadowRoot.appendChild(style)
-		},
-		openEmoji(ev) {
-			this.$emit('open-emoji', !this.emojiOpened)
-			this.setEmojiPickerPosition(
-				ev.clientY,
-				ev.view.innerWidth,
-				ev.view.innerHeight,
-			)
-		},
-		closeEmoji() {
-			this.$emit('open-emoji', false)
-		},
-		setEmojiPickerPosition(clientY, innerWidth, innerHeight) {
-			const mobileSize = innerWidth < 500 || innerHeight < 700
-			const roomFooterRef = findParentBySelector(this.$el, '#room-footer')
+	const style = document.createElement('style')
+	style.textContent = picker + nav + searchBox + search
+	emojiPicker.value!.shadowRoot!.appendChild(style)
+}
 
-			if (!roomFooterRef) {
-				if (mobileSize)
-					this.emojiPickerRight = '-50px'
-				return
-			}
+function openEmoji(ev: MouseEvent): void {
+	emit('open-emoji', !props.emojiOpened)
+	setEmojiPickerPosition(
+		ev.clientY,
+		ev.view!.innerWidth,
+		ev.view!.innerHeight,
+	)
+}
 
-			if (mobileSize) {
-				this.emojiPickerRight
-					= `${innerWidth / 2 - (this.positionTop ? 200 : 150)}px`
-				this.emojiPickerTop = 100
-				this.emojiPickerHeight = innerHeight - 200
-			}
-			else {
-				const roomFooterTop = roomFooterRef.getBoundingClientRect().top
-				const pickerTopPosition
-					= roomFooterTop - clientY > this.emojiPickerHeight - 50
+function closeEmoji(): void {
+	emit('open-emoji', false)
+}
 
-				if (pickerTopPosition)
-					this.emojiPickerTop = clientY + 10
-				else this.emojiPickerTop = clientY - this.emojiPickerHeight - 10
+function setEmojiPickerPosition(clientY: number, innerWidth: number, innerHeight: number): void {
+	const mobileSize = innerWidth < 500 || innerHeight < 700
+	const roomFooterRef = findParentBySelector(root.value, '#room-footer')
 
-				this.emojiPickerRight = this.positionTop
-					? '0px'
-					: this.positionRight
-						? '60px'
-						: ''
-			}
-		},
-	},
+	if (!roomFooterRef) {
+		if (mobileSize)
+			emojiPickerRight.value = '-50px'
+		return
+	}
+
+	if (mobileSize) {
+		emojiPickerRight.value
+			= `${innerWidth / 2 - (props.positionTop ? 200 : 150)}px`
+		emojiPickerTop.value = 100
+		emojiPickerHeight.value = innerHeight - 200
+	}
+	else {
+		const roomFooterTop = roomFooterRef.getBoundingClientRect().top
+		const pickerTopPosition
+			= roomFooterTop - clientY > emojiPickerHeight.value - 50
+
+		if (pickerTopPosition)
+			emojiPickerTop.value = clientY + 10
+		else emojiPickerTop.value = clientY - emojiPickerHeight.value - 10
+
+		emojiPickerRight.value = props.positionTop
+			? '0px'
+			: props.positionRight
+				? '60px'
+				: ''
+	}
 }
 </script>
 
 <template>
-	<div class="vac-emoji-wrapper">
+	<div ref="root" class="vac-emoji-wrapper">
 		<div
 			class="vac-svg-button"
 			:class="{ 'vac-emoji-reaction': emojiReaction }"

@@ -1,46 +1,44 @@
-<script>
-export default {
-	name: 'RoomUsersTag',
+<script setup lang="ts">
+import type { RoomUser } from '@/types'
+import { ref, watch } from 'vue'
 
-	props: {
-		filteredUsersTag: { type: Array, required: true },
-		selectItem: { type: Boolean, default: null },
-		activeUpOrDown: { type: Number, default: null },
-	},
+const props = defineProps<{
+	filteredUsersTag: RoomUser[]
+	selectItem: boolean | null
+	activeUpOrDown: number | null
+}>()
 
-	emits: ['select-user-tag', 'activate-item'],
+const emit = defineEmits<{
+	'select-user-tag': [user: RoomUser]
+	'activate-item': []
+}>()
 
-	data() {
-		return {
-			activeItem: null,
-		}
-	},
+const activeItem = ref<number | null>(null)
 
-	watch: {
-		filteredUsersTag(val, oldVal) {
-			if (!oldVal.length || val.length !== oldVal.length) {
-				this.activeItem = 0
-			}
-		},
-		selectItem(val) {
-			if (val) {
-				this.$emit('select-user-tag', this.filteredUsersTag[this.activeItem])
-			}
-		},
-		activeUpOrDown() {
-			if (
-				this.activeUpOrDown > 0
-				&& this.activeItem < this.filteredUsersTag.length - 1
-			) {
-				this.activeItem++
-			}
-			else if (this.activeUpOrDown < 0 && this.activeItem > 0) {
-				this.activeItem--
-			}
-			this.$emit('activate-item')
-		},
-	},
-}
+watch(() => props.filteredUsersTag, (val, oldVal) => {
+	if (!oldVal.length || val.length !== oldVal.length) {
+		activeItem.value = 0
+	}
+})
+
+watch(() => props.selectItem, (val) => {
+	if (val) {
+		emit('select-user-tag', props.filteredUsersTag[activeItem.value!])
+	}
+})
+
+watch(() => props.activeUpOrDown, () => {
+	if (
+		props.activeUpOrDown! > 0
+		&& activeItem.value! < props.filteredUsersTag.length - 1
+	) {
+		activeItem.value!++
+	}
+	else if (props.activeUpOrDown! < 0 && activeItem.value! > 0) {
+		activeItem.value!--
+	}
+	emit('activate-item')
+})
 </script>
 
 <template>

@@ -1,99 +1,85 @@
-<script>
-import SvgIcon from '../../../components/SvgIcon/SvgIcon'
+<script setup lang="ts">
+import type { CustomAction, Room, TextMessages } from '@/types'
 
-import vClickOutside from '../../../utils/on-click-outside'
-import typingText from '../../../utils/typing-text'
+import { computed, ref, watch } from 'vue'
 
-export default {
-	name: 'RoomHeader',
-	components: {
-		SvgIcon,
-	},
+import SvgIcon from '@/components/SvgIcon/SvgIcon.vue'
+import vClickOutside from '@/utils/on-click-outside'
 
-	directives: {
-		clickOutside: vClickOutside,
-	},
+import typingText from '@/utils/typing-text'
 
-	props: {
-		currentUserId: { type: [String, Number], required: true },
-		textMessages: { type: Object, required: true },
-		singleRoom: { type: Boolean, required: true },
-		showRoomsList: { type: Boolean, required: true },
-		isMobile: { type: Boolean, required: true },
-		roomInfoEnabled: { type: Boolean, required: true },
-		menuActions: { type: Array, required: true },
-		room: { type: Object, required: true },
-		messageSelectionEnabled: { type: Boolean, required: true },
-		messageSelectionActions: { type: Array, required: true },
-		selectedMessagesTotal: { type: Number, required: true },
-	},
+const props = defineProps<{
+	currentUserId: string | number
+	textMessages: TextMessages
+	singleRoom: boolean
+	showRoomsList: boolean
+	isMobile: boolean
+	roomInfoEnabled: boolean
+	menuActions: CustomAction[]
+	room: Room
+	messageSelectionEnabled: boolean
+	messageSelectionActions: CustomAction[]
+	selectedMessagesTotal: number
+}>()
 
-	emits: [
-		'toggle-rooms-list',
-		'room-info',
-		'menu-action-handler',
-		'cancel-message-selection',
-		'message-selection-action-handler',
-	],
+const emit = defineEmits<{
+	'toggle-rooms-list': []
+	'room-info': []
+	'menu-action-handler': [action: CustomAction]
+	'cancel-message-selection': []
+	'message-selection-action-handler': [action: CustomAction]
+}>()
 
-	data() {
-		return {
-			menuOpened: false,
-			messageSelectionAnimationEnded: true,
-		}
-	},
+const menuOpened = ref(false)
+const messageSelectionAnimationEnded = ref(true)
 
-	computed: {
-		typingUsers() {
-			return typingText(this.room, this.currentUserId, this.textMessages)
-		},
-		userStatus() {
-			if (!this.room.users || this.room.users.length !== 2)
-				return
+const typingUsers = computed(() => {
+	return typingText(props.room, String(props.currentUserId), props.textMessages)
+})
 
-			const user = this.room.users.find(u => u._id !== this.currentUserId)
+const userStatus = computed(() => {
+	if (!props.room.users || props.room.users.length !== 2)
+		return
 
-			if (!user?.status)
-				return
+	const user = props.room.users.find(u => u._id !== props.currentUserId)
 
-			let text = ''
+	if (!user?.status)
+		return
 
-			if (user.status.state === 'online') {
-				text = this.textMessages.IS_ONLINE
-			}
-			else if (user.status.lastChanged) {
-				text = this.textMessages.LAST_SEEN + user.status.lastChanged
-			}
+	let text = ''
 
-			return text
-		},
-	},
+	if (user.status.state === 'online') {
+		text = props.textMessages.IS_ONLINE
+	}
+	else if (user.status.lastChanged) {
+		text = props.textMessages.LAST_SEEN + user.status.lastChanged
+	}
 
-	watch: {
-		messageSelectionEnabled(val) {
-			if (val) {
-				this.messageSelectionAnimationEnded = false
-			}
-			else {
-				setTimeout(() => {
-					this.messageSelectionAnimationEnded = true
-				}, 300)
-			}
-		},
-	},
+	return text
+})
 
-	methods: {
-		menuActionHandler(action) {
-			this.closeMenu()
-			this.$emit('menu-action-handler', action)
-		},
-		closeMenu() {
-			this.menuOpened = false
-		},
-		messageSelectionActionHandler(action) {
-			this.$emit('message-selection-action-handler', action)
-		},
-	},
+watch(() => props.messageSelectionEnabled, (val) => {
+	if (val) {
+		messageSelectionAnimationEnded.value = false
+	}
+	else {
+		setTimeout(() => {
+			messageSelectionAnimationEnded.value = true
+		}, 300)
+	}
+})
+
+function menuActionHandler(action: CustomAction): void {
+	closeMenu()
+	emit('menu-action-handler', action)
+}
+
+function closeMenu(): void {
+	menuOpened.value = false
+}
+
+function messageSelectionActionHandler(action: CustomAction): void {
+	emit('message-selection-action-handler', action)
 }
 </script>
 

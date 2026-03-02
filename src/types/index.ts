@@ -1,7 +1,3 @@
-import type { DefineComponent } from 'vue'
-
-export function register(): void
-
 export type StringNumber = string | number
 
 export interface UserStatus {
@@ -31,6 +27,7 @@ export interface MessageFile {
 }
 
 export interface LastMessage {
+	_id?: string
 	content: string
 	senderId: string
 	username?: string
@@ -39,6 +36,7 @@ export interface LastMessage {
 	distributed?: boolean
 	seen?: boolean
 	new?: boolean
+	deleted?: boolean
 	files?: MessageFile[]
 }
 
@@ -128,6 +126,37 @@ export interface LinkOptions {
 	rel?: string | null
 }
 
+export interface TextMessages {
+	ROOMS_EMPTY: string
+	ROOM_EMPTY: string
+	NEW_MESSAGES: string
+	MESSAGE_DELETED: string
+	MESSAGES_EMPTY: string
+	CONVERSATION_STARTED: string
+	TYPE_MESSAGE: string
+	SEARCH: string
+	IS_ONLINE: string
+	LAST_SEEN: string
+	IS_TYPING: string
+	CANCEL_SELECT_MESSAGE: string
+	[key: string]: StringNumber
+}
+
+export interface ThemeStyles {
+	general: Record<string, string>
+	container: Record<string, string>
+	header: Record<string, string>
+	footer: Record<string, string>
+	content: Record<string, string>
+	sidemenu: Record<string, string>
+	dropdown: Record<string, string>
+	message: Record<string, string>
+	markdown: Record<string, string>
+	room: Record<string, string>
+	emoji: Record<string, string>
+	icons: Record<string, string>
+}
+
 export interface Props {
 	height?: string
 	theme?: 'light' | 'dark'
@@ -183,26 +212,24 @@ export interface Props {
 	showMessagesStarted?: boolean
 }
 
-export type Events = {
+export interface Events {
 	'toggle-rooms-list': { opened: boolean }
 	'room-info': { room: Room }
-	'fetch-messages': { room: Room; options?: { reset?: boolean } }
-	'send-message': { content: string; roomId: string; files?: MessageFile[]; replyMessage?: Message }
-	'edit-message': { messageId: string; newContent: string; roomId: string; files?: MessageFile[] }
+	'fetch-messages': { room: Room, options?: { reset?: boolean } }
+	'send-message': { content: string, roomId: string, files?: MessageFile[], replyMessage?: Message }
+	'edit-message': { messageId: string, newContent: string, roomId: string, files?: MessageFile[] }
 	'delete-message': { message: Message }
-	'open-file': { message: Message; file: MessageFile }
+	'open-file': { message: Message, file: MessageFile }
 	'open-user-tag': { user: RoomUser }
 	'open-failed-message': { message: Message }
-	'menu-action-handler': { action: CustomAction; roomId: string }
-	'message-action-handler': { action: MessageAction; message: Message }
-	'send-message-reaction': { reaction: { unicode: string; reaction: MessageReactions }; messageId: string; roomId: string }
-	'typing-message': { message: string; roomId: string }
-	'textarea-action-handler': { message: Message; roomId: string }
+	'menu-action-handler': { action: CustomAction, roomId: string }
+	'message-action-handler': { action: MessageAction, message: Message }
+	'send-message-reaction': { reaction: { unicode: string, reaction: MessageReactions }, messageId: string, roomId: string }
+	'typing-message': { message: string, roomId: string }
+	'textarea-action-handler': { message: Message, roomId: string }
 	'fetch-more-rooms': void
 	'add-room': void
 	'search-room': { value: string }
-	'room-action-handler': { action: CustomAction; roomId: string }
-	'message-selection-action-handler': { action: CustomAction; messages: Message[] }
+	'room-action-handler': { action: CustomAction, roomId: string }
+	'message-selection-action-handler': { action: CustomAction, messages: Message[] }
 }
-
-export declare const VueAdvancedChat: DefineComponent<Props>

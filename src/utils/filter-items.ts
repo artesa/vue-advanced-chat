@@ -1,4 +1,4 @@
-export default (items, prop, val, startsWith = false) => {
+export default <T extends Record<string, any>>(items: T[], prop: keyof T, val: string, startsWith = false): T[] => {
 	if (!val || val === '')
 		return items
 
@@ -9,7 +9,7 @@ export default (items, prop, val, startsWith = false) => {
 	})
 }
 
-function formatString(string) {
+function formatString(string: string): string {
 	return string
 		.toLowerCase()
 		.normalize('NFD')
