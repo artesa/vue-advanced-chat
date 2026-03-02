@@ -9,8 +9,10 @@
 		overflow-wrap: break-word;
 		position: relative;
 		white-space: normal;
-		box-shadow: 0 1px 1px -1px rgba(0, 0, 0, 0.1),
-			0 1px 1px -1px rgba(0, 0, 0, 0.11), 0 1px 2px -1px rgba(0, 0, 0, 0.11);
+		box-shadow:
+			0 1px 1px -1px rgba(0, 0, 0, 0.1),
+			0 1px 1px -1px rgba(0, 0, 0, 0.11),
+			0 1px 2px -1px rgba(0, 0, 0, 0.11);
 	}
 
 	.vac-card-date {
@@ -132,13 +134,17 @@
 		transition-property: box-shadow, opacity;
 		transition: box-shadow 280ms cubic-bezier(0.4, 0, 0.2, 1);
 		will-change: box-shadow;
-		box-shadow: 0 1px 1px -1px rgba(0, 0, 0, 0.1),
-			0 1px 1px -1px rgba(0, 0, 0, 0.11), 0 1px 2px -1px rgba(0, 0, 0, 0.11);
+		box-shadow:
+			0 1px 1px -1px rgba(0, 0, 0, 0.1),
+			0 1px 1px -1px rgba(0, 0, 0, 0.11),
+			0 1px 2px -1px rgba(0, 0, 0, 0.11);
 	}
 
 	.vac-message-highlight {
-		box-shadow: 0 1px 2px -1px rgba(0, 0, 0, 0.1),
-			0 1px 2px -1px rgba(0, 0, 0, 0.11), 0 1px 5px -1px rgba(0, 0, 0, 0.11);
+		box-shadow:
+			0 1px 2px -1px rgba(0, 0, 0, 0.1),
+			0 1px 2px -1px rgba(0, 0, 0, 0.11),
+			0 1px 5px -1px rgba(0, 0, 0, 0.11);
 	}
 
 	.vac-message-current {
@@ -213,6 +219,7 @@
 	}
 
 	.vac-icon-check {
+		display: inline;
 		height: 14px;
 		width: 14px;
 		vertical-align: middle;

@@ -25,7 +25,7 @@ const imageResponsive = ref({ maxHeight: 0, loaderTop: 0 })
 const imageLoading = ref(false)
 const imageHover = ref(false)
 
-const imageRef = useTemplateRef<HTMLDivElement>(`imageRef${props.index}`)
+const imageRef = useTemplateRef('imageRef')
 
 const isImageLoading = computed(() => {
 	return props.file.url.indexOf('blob:http') !== -1 || imageLoading.value
@@ -57,7 +57,8 @@ onMounted(() => {
 })
 
 function checkImgLoad() {
-	if (!isImageFile(props.file)) return
+	if (!isImageFile(props.file))
+    return
 	imageLoading.value = true
 	const image = new Image()
 	image.src = props.file.url
@@ -76,7 +77,7 @@ function openFile(event: Event, action: string) {
 	<div class="vac-message-file-container">
 		<div
 			v-if="isImage"
-			:ref="'imageRef' + index"
+			ref="imageRef"
 			class="vac-message-image-container"
 			@mouseover="imageHover = true"
 			@mouseleave="imageHover = false"
