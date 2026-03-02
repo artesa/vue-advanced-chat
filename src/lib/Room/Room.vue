@@ -18,7 +18,7 @@ import type {
 	TemplateText,
 	TextFormatting,
 	TextMessages,
-	UsernameOptions,
+	UsernameOptions
 } from '@/types'
 
 import { computed, onMounted, ref, useTemplateRef, watch } from 'vue'
@@ -30,60 +30,65 @@ import RoomFooter from './RoomFooter/RoomFooter.vue'
 import RoomHeader from './RoomHeader/RoomHeader.vue'
 import RoomMessage from './RoomMessage/RoomMessage.vue'
 
-const props = withDefaults(defineProps<{
-	currentUserId: StringNumber
-	textMessages: TextMessages
-	singleRoom: boolean
-	showRoomsList: boolean
-	isMobile: boolean
-	rooms: Room[]
-	roomId: StringNumber
-	loadFirstRoom: boolean
-	messages: Message[]
-	roomMessage: string | null
-	messagesLoaded: boolean
-	menuActions: CustomAction[]
-	messageActions: MessageAction[]
-	messageSelectionActions: CustomAction[]
-	autoScroll: AutoScroll
-	showSendIcon: boolean
-	showFiles: boolean
-	showAudio: boolean
-	showRoomHeader: boolean
-	showEmojis: boolean
-	showReactionEmojis: boolean
-	showNewMessagesDivider: boolean
-	showFooter: boolean
-	acceptedFiles: string
-	captureFiles?: string
-	multipleFiles: boolean
-	textFormatting: TextFormatting
-	linkOptions: LinkOptions
-	loadingRooms: boolean
-	roomInfoEnabled: boolean
-	textareaActionEnabled: boolean
-	textareaAutoFocus: boolean
-	userTagsEnabled: boolean
-	emojisSuggestionEnabled: boolean
-	scrollDistance: number
-	templatesText: TemplateText[] | null
-	usernameOptions: UsernameOptions
-	emojiDataSource: string | undefined
-	showMessagesStartedText: boolean
-}>(), {
-	roomMessage: null,
-	showRoomHeader: true,
-	multipleFiles: true,
-	templatesText: null,
-	emojiDataSource: undefined,
-	showMessagesStartedText: true,
-})
+const props = withDefaults(
+	defineProps<{
+		currentUserId: StringNumber
+		textMessages: TextMessages
+		singleRoom: boolean
+		showRoomsList: boolean
+		isMobile: boolean
+		rooms: Room[]
+		roomId: StringNumber
+		loadFirstRoom: boolean
+		messages: Message[]
+		roomMessage?: string | null
+		messagesLoaded: boolean
+		menuActions: CustomAction[]
+		messageActions: MessageAction[]
+		messageSelectionActions: CustomAction[]
+		autoScroll: AutoScroll
+		showSendIcon: boolean
+		showFiles: boolean
+		showAudio: boolean
+		showRoomHeader?: boolean
+		showEmojis: boolean
+		showReactionEmojis: boolean
+		showNewMessagesDivider: boolean
+		showFooter: boolean
+		acceptedFiles: string
+		captureFiles?: string
+		multipleFiles?: boolean
+		textFormatting: TextFormatting
+		linkOptions: LinkOptions
+		loadingRooms: boolean
+		roomInfoEnabled: boolean
+		textareaActionEnabled: boolean
+		textareaAutoFocus: boolean
+		userTagsEnabled: boolean
+		emojisSuggestionEnabled: boolean
+		scrollDistance: number
+		templatesText?: TemplateText[] | null
+		usernameOptions: UsernameOptions
+		emojiDataSource?: string | undefined
+		showMessagesStartedText?: boolean
+	}>(),
+	{
+		roomMessage: null,
+		showRoomHeader: true,
+		multipleFiles: true,
+		templatesText: null,
+		emojiDataSource: undefined,
+		showMessagesStartedText: true
+	}
+)
 
 const emit = defineEmits<{
 	'toggle-rooms-list': []
 	'room-info': []
 	'menu-action-handler': [payload: CustomAction]
-	'message-selection-action-handler': [payload: RoomMessageSelectionActionHandlerEvent]
+	'message-selection-action-handler': [
+		payload: RoomMessageSelectionActionHandlerEvent
+	]
 	'edit-message': [payload: RoomEditMessageEvent]
 	'send-message': [payload: RoomSendMessageEvent]
 	'delete-message': [payload: Message]
@@ -109,7 +114,7 @@ const showLoader = ref(true)
 const loadingMoreMessages = ref(false)
 const scrollIcon = ref(false)
 const scrollMessagesCount = ref(0)
-const newMessages = ref<Array<{ _id: string, index: number }>>([])
+const newMessages = ref<Array<{ _id: string; index: number }>>([])
 const messageSelectionEnabled = ref(false)
 const selectedMessages = ref<Message[]>([])
 const droppedFiles = ref<File[]>([])
@@ -120,17 +125,17 @@ const room = computed<Room | Record<string, never>>(() => {
 
 const showNoMessages = computed(() => {
 	return (
-		props.roomId
-		&& !props.messages.length
-		&& !loadingMessages.value
-		&& !props.loadingRooms
+		props.roomId &&
+		!props.messages.length &&
+		!loadingMessages.value &&
+		!props.loadingRooms
 	)
 })
 
 const showNoRoom = computed(() => {
-	const noRoomSelected
-		= (!props.rooms.length && !props.loadingRooms)
-			|| (!props.roomId && !props.loadFirstRoom)
+	const noRoomSelected =
+		(!props.rooms.length && !props.loadingRooms) ||
+		(!props.roomId && !props.loadFirstRoom)
 
 	if (noRoomSelected) {
 		updateLoadingMessages(false)
@@ -139,36 +144,50 @@ const showNoRoom = computed(() => {
 })
 
 const showMessagesStarted = computed(() => {
-	return props.messages.length && props.messagesLoaded && props.showMessagesStartedText
+	return (
+		props.messages.length &&
+		props.messagesLoaded &&
+		props.showMessagesStartedText
+	)
 })
 
-watch(() => props.roomId, () => {
-	onRoomChanged()
-}, { immediate: true })
+watch(
+	() => props.roomId,
+	() => {
+		onRoomChanged()
+	},
+	{ immediate: true }
+)
 
-watch(() => props.messages, (newVal, oldVal) => {
-	newVal.forEach((message, i) => {
-		if (
-			props.showNewMessagesDivider
-			&& !message.seen
-			&& message.senderId !== props.currentUserId
-		) {
-			newMessages.value.push({
-				_id: message._id,
-				index: i,
-			})
+watch(
+	() => props.messages,
+	(newVal, oldVal) => {
+		newVal.forEach((message, i) => {
+			if (
+				props.showNewMessagesDivider &&
+				!message.seen &&
+				message.senderId !== props.currentUserId
+			) {
+				newMessages.value.push({
+					_id: message._id,
+					index: i
+				})
+			}
+		})
+		if (oldVal?.length === newVal?.length - 1) {
+			newMessages.value = []
 		}
-	})
-	if (oldVal?.length === newVal?.length - 1) {
-		newMessages.value = []
-	}
-	setTimeout(() => (loadingMoreMessages.value = false))
-}, { deep: true })
+		setTimeout(() => (loadingMoreMessages.value = false))
+	},
+	{ deep: true }
+)
 
-watch(() => props.messagesLoaded, (val) => {
-	if (val)
-		updateLoadingMessages(false)
-})
+watch(
+	() => props.messagesLoaded,
+	val => {
+		if (val) updateLoadingMessages(false)
+	}
+)
 
 onMounted(() => {
 	newMessages.value = []
@@ -194,10 +213,10 @@ function initIntersectionObserver() {
 		const options = {
 			root: root.value?.querySelector('#messages-list'),
 			rootMargin: `${props.scrollDistance}px`,
-			threshold: 0,
+			threshold: 0
 		}
 
-		observer.value = new IntersectionObserver((entries) => {
+		observer.value = new IntersectionObserver(entries => {
 			if (entries[0].isIntersecting) {
 				loadMoreMessages()
 			}
@@ -209,15 +228,14 @@ function initIntersectionObserver() {
 
 function preventTopScroll() {
 	const container = scrollContainer.value
-	if (!container)
-		return
+	if (!container) return
 	const prevScrollHeight = container.scrollHeight
 
-	const resizeObserver = new ResizeObserver((_) => {
+	const resizeObserver = new ResizeObserver(_ => {
 		if (container.scrollHeight !== prevScrollHeight) {
 			if (scrollContainer.value) {
 				scrollContainer.value.scrollTo({
-					top: container.scrollHeight - prevScrollHeight,
+					top: container.scrollHeight - prevScrollHeight
 				})
 				resizeObserver.disconnect()
 			}
@@ -230,8 +248,7 @@ function preventTopScroll() {
 }
 
 function touchStart(touchEvent: TouchEvent) {
-	if (props.singleRoom)
-		return
+	if (props.singleRoom) return
 
 	if (touchEvent.changedTouches.length === 1) {
 		const posXStart = touchEvent.changedTouches[0].clientX
@@ -240,12 +257,16 @@ function touchStart(touchEvent: TouchEvent) {
 		addEventListener(
 			'touchend',
 			ev => touchEnd(ev as TouchEvent, posXStart, posYStart),
-			{ once: true },
+			{ once: true }
 		)
 	}
 }
 
-function touchEnd(touchEvent: TouchEvent, posXStart: number, posYStart: number) {
+function touchEnd(
+	touchEvent: TouchEvent,
+	posXStart: number,
+	posYStart: number
+) {
 	if (touchEvent.changedTouches.length === 1) {
 		const posXEnd = touchEvent.changedTouches[0].clientX
 		const posYEnd = touchEvent.changedTouches[0].clientY
@@ -267,13 +288,11 @@ function onRoomChanged() {
 
 	const unwatch = watch(
 		() => props.messages,
-		(val) => {
-			if (!val || !val.length)
-				return
+		val => {
+			if (!val || !val.length) return
 
 			const element = scrollContainer.value
-			if (!element)
-				return
+			if (!element) return
 
 			unwatch()
 
@@ -281,7 +300,7 @@ function onRoomChanged() {
 				element.scrollTo({ top: element.scrollHeight })
 				updateLoadingMessages(false)
 			})
-		},
+		}
 	)
 }
 
@@ -296,13 +315,20 @@ function selectMessage(message: Message) {
 
 function unselectMessage(messageId: string) {
 	selectedMessages.value = selectedMessages.value.filter(
-		message => message._id !== messageId,
+		message => message._id !== messageId
 	)
 }
 
-function onMessageAdded({ message, index, ref: messageRef }: { message: Message, index: number, ref: HTMLElement | undefined }) {
-	if (index !== props.messages.length - 1 || !messageRef)
-		return
+function onMessageAdded({
+	message,
+	index,
+	ref: messageRef
+}: {
+	message: Message
+	index: number
+	ref: HTMLElement | undefined
+}) {
+	if (index !== props.messages.length - 1 || !messageRef) return
 
 	const autoScrollOffset = messageRef.offsetHeight + 60
 
@@ -319,28 +345,23 @@ function onMessageAdded({ message, index, ref: messageRef }: { message: Message,
 				if (props.autoScroll.send?.newAfterScrollUp) {
 					scrollToBottom()
 				}
-			}
-			else {
+			} else {
 				if (props.autoScroll.send?.new) {
 					scrollToBottom()
 				}
 			}
-		}
-		else {
+		} else {
 			if (scrolledUp) {
 				if (props.autoScroll.receive?.newAfterScrollUp) {
 					scrollToBottom()
-				}
-				else {
+				} else {
 					scrollIcon.value = true
 					scrollMessagesCount.value++
 				}
-			}
-			else {
+			} else {
 				if (props.autoScroll.receive?.new) {
 					scrollToBottom()
-				}
-				else {
+				} else {
 					scrollIcon.value = true
 					scrollMessagesCount.value++
 				}
@@ -350,23 +371,19 @@ function onMessageAdded({ message, index, ref: messageRef }: { message: Message,
 }
 
 function onContainerScroll(e: Event) {
-	if (!e.target)
-		return
+	if (!e.target) return
 
 	const bottomScroll = getBottomScroll(e.target as HTMLElement)
-	if (bottomScroll < 60)
-		scrollMessagesCount.value = 0
+	if (bottomScroll < 60) scrollMessagesCount.value = 0
 	scrollIcon.value = bottomScroll > 500 || !!scrollMessagesCount.value
 }
 
 function loadMoreMessages() {
-	if (loadingMessages.value)
-		return
+	if (loadingMessages.value) return
 
 	setTimeout(
 		() => {
-			if (loadingMoreMessages.value)
-				return
+			if (loadingMoreMessages.value) return
 
 			if (props.messagesLoaded || !props.roomId) {
 				loadingMoreMessages.value = false
@@ -379,11 +396,14 @@ function loadMoreMessages() {
 			loadingMoreMessages.value = true
 		},
 		// prevent scroll bouncing speed
-		500,
+		500
 	)
 }
 
-function messageActionHandler({ action, message }: RoomMessageActionHandlerEvent) {
+function messageActionHandler({
+	action,
+	message
+}: RoomMessageActionHandlerEvent) {
 	switch (action.name) {
 		case 'replyMessage':
 			initReplyMessage.value = message
@@ -411,7 +431,7 @@ function messageActionHandler({ action, message }: RoomMessageActionHandlerEvent
 function messageSelectionActionHandler(action: CustomAction) {
 	emit('message-selection-action-handler', {
 		action,
-		messages: selectedMessages.value,
+		messages: selectedMessages.value
 	})
 	resetMessageSelection()
 }
@@ -436,8 +456,8 @@ function scrollToBottom() {
 	}, 50)
 }
 
-function openFile({ message, file }: RoomOpenFileEvent) {
-	emit('open-file', { message, file })
+function openFile(event: RoomOpenFileEvent) {
+	emit('open-file', event)
 }
 
 function openUserTag(user: RoomUser | undefined) {
@@ -477,7 +497,7 @@ function onDropFiles(event: DragEvent) {
 			:is-mobile="isMobile"
 			:room-info-enabled="roomInfoEnabled"
 			:menu-actions="menuActions"
-			:room="(room as any)"
+			:room="room as any"
 			:message-selection-enabled="messageSelectionEnabled"
 			:message-selection-actions="messageSelectionActions"
 			:selected-messages-total="selectedMessages.length"
@@ -585,7 +605,7 @@ function onDropFiles(event: DragEvent) {
 		</div>
 
 		<RoomFooter
-			:room="(room as any)"
+			:room="room as any"
 			:room-id="roomId"
 			:room-message="roomMessage"
 			:text-messages="textMessages"

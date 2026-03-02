@@ -11,15 +11,15 @@ import type {
 	MessageAction,
 	MessageActionHandlerEvent,
 	MessageFile,
-	MessageFileAction,
 	MessageSelectionActionHandlerEvent,
 	OpenFailedMessageEvent,
 	OpenFileEvent,
 	OpenUserTagEvent,
 	RoomActionHandlerEvent,
-	RoomUser,
 	RoomInfoEvent,
+	RoomOpenFileEvent,
 	Room as RoomType,
+	RoomUser,
 	SearchRoomEvent,
 	SendMessageEvent,
 	SendMessageReactionEvent,
@@ -29,7 +29,6 @@ import type {
 	TextFormatting,
 	ToggleRoomsListEvent,
 	TypingMessageEvent,
-	UsernameOptions,
 } from '@/types'
 
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
@@ -182,7 +181,9 @@ const emit = defineEmits<{
 	'add-room': []
 	'search-room': [payload: SearchRoomEvent]
 	'room-action-handler': [payload: RoomActionHandlerEvent]
-	'message-selection-action-handler': [payload: MessageSelectionActionHandlerEvent]
+	'message-selection-action-handler': [
+		payload: MessageSelectionActionHandlerEvent,
+	]
 }>()
 
 // Data
@@ -371,28 +372,30 @@ function deleteMessage(message: Message) {
 	emit('delete-message', { message, roomId: (room.value as RoomType).roomId })
 }
 
-function openFile({ message, file }: { message: Message, file: MessageFileAction }) {
+function openFile(options: RoomOpenFileEvent) {
+	const { file, action, message } = options
 	if (props.handleCustomOpenFiles) {
 		emit('open-file', {
 			message,
-			file: file.file,
+			file,
 			defaultHandle: () => {
-				_openFile({ message, file })
+				_openFile({ action, file, message })
 			},
 		})
 	}
 	else {
-		_openFile({ message, file })
+		_openFile({ action, file, message })
 	}
 }
 
-function _openFile({ message, file }: { message: Message, file: MessageFileAction }) {
-	if (props.mediaPreviewEnabled && file.action === 'preview') {
-		previewFile.value = file.file
+function _openFile(event: RoomOpenFileEvent) {
+	const { action, file } = event
+	if (props.mediaPreviewEnabled && action === 'preview') {
+		previewFile.value = file
 		showMediaPreview.value = true
 	}
 	else {
-		emit('open-file', { message, file: file.file })
+		emit('open-file', event)
 	}
 }
 
@@ -421,7 +424,13 @@ function roomActionHandler({ action, roomId }: RoomActionHandlerEvent) {
 	})
 }
 
-function messageActionHandler({ action, message }: { action: MessageAction, message: Message }) {
+function messageActionHandler({
+	action,
+	message,
+}: {
+	action: MessageAction
+	message: Message
+}) {
 	emit('message-action-handler', {
 		action,
 		message,
@@ -429,7 +438,13 @@ function messageActionHandler({ action, message }: { action: MessageAction, mess
 	})
 }
 
-function messageSelectionActionHandler({ action, messages }: { action: CustomAction, messages: Message[] }) {
+function messageSelectionActionHandler({
+	action,
+	messages,
+}: {
+	action: CustomAction
+	messages: Message[]
+}) {
 	emit('message-selection-action-handler', {
 		action,
 		messages,
@@ -437,7 +452,9 @@ function messageSelectionActionHandler({ action, messages }: { action: CustomAct
 	})
 }
 
-function sendMessageReaction(messageReaction: Omit<SendMessageReactionEvent, 'roomId'>) {
+function sendMessageReaction(
+	messageReaction: Omit<SendMessageReactionEvent, 'roomId'>,
+) {
 	emit('send-message-reaction', {
 		...messageReaction,
 		roomId: (room.value as RoomType).roomId,

@@ -5,11 +5,12 @@ import type {
 	MessageAction,
 	MessageFileAction,
 	MessageReactions as MessageReactionsType,
+	RoomOpenFileEvent,
 	RoomUser,
 	StringNumber,
 	TextFormatting,
 	TextMessages,
-	UsernameOptions,
+	UsernameOptions
 } from '@/types'
 
 import { computed, onMounted, ref, useTemplateRef, watch } from 'vue'
@@ -36,7 +37,7 @@ const props = withDefaults(
 		editedMessageId?: StringNumber | null
 		roomUsers?: RoomUser[]
 		messageActions: MessageAction[]
-		newMessages?: Array<{ _id: string, index: number }>
+		newMessages?: Array<{ _id: string; index: number }>
 		showReactionEmojis: boolean
 		showNewMessagesDivider: boolean
 		textFormatting: TextFormatting
@@ -51,17 +52,26 @@ const props = withDefaults(
 		roomUsers: () => [],
 		newMessages: () => [],
 		selectedMessages: () => [],
-		emojiDataSource: undefined,
-	},
+		emojiDataSource: undefined
+	}
 )
 
 const emit = defineEmits<{
-	(e: 'message-added', payload: { message: Message, index: number, ref: HTMLElement | undefined }): void
-	(e: 'open-file', payload: { message: Message, file: MessageFileAction }): void
+	(
+		e: 'message-added',
+		payload: { message: Message; index: number; ref: HTMLElement | undefined }
+	): void
+	(e: 'open-file', payload: RoomOpenFileEvent): void
 	(e: 'open-user-tag', user: RoomUser | undefined): void
 	(e: 'open-failed-message', payload: { message: Message }): void
-	(e: 'message-action-handler', payload: { action: MessageAction, message: Message }): void
-	(e: 'send-message-reaction', payload: { messageId: string, reaction: string, remove: boolean }): void
+	(
+		e: 'message-action-handler',
+		payload: { action: MessageAction; message: Message }
+	): void
+	(
+		e: 'send-message-reaction',
+		payload: { messageId: string; reaction: string; remove: boolean }
+	): void
 	(e: 'select-message', payload: Message): void
 	(e: 'unselect-message', payload: string): void
 }>()
@@ -81,34 +91,35 @@ const hoverAudioProgress = ref(false)
 // Computed
 const showUsername = computed(() => {
 	if (
-		!props.usernameOptions.currentUser
-		&& props.message.senderId === props.currentUserId
+		!props.usernameOptions.currentUser &&
+		props.message.senderId === props.currentUserId
 	) {
 		return false
-	}
-	else {
-		return (props.roomUsers.length ?? 0) >= (props.usernameOptions.minUsers ?? 0)
+	} else {
+		return (
+			(props.roomUsers.length ?? 0) >= (props.usernameOptions.minUsers ?? 0)
+		)
 	}
 })
 
 const showDate = computed(() => {
 	return (
-		props.index > 0
-		&& props.message.date !== props.messages[props.index - 1].date
+		props.index > 0 &&
+		props.message.date !== props.messages[props.index - 1].date
 	)
 })
 
 const messageOffset = computed(() => {
 	return (
-		props.index > 0
-		&& props.message.senderId !== props.messages[props.index - 1].senderId
+		props.index > 0 &&
+		props.message.senderId !== props.messages[props.index - 1].senderId
 	)
 })
 
 const isMessageHover = computed(() => {
 	return (
-		props.editedMessageId === props.message._id
-		|| hoverMessageId.value === props.message._id
+		props.editedMessageId === props.message._id ||
+		hoverMessageId.value === props.message._id
 	)
 })
 
@@ -118,54 +129,52 @@ const isAudio = computed(() => {
 
 const isCheckmarkVisible = computed(() => {
 	return (
-		props.message.senderId === props.currentUserId
-		&& !props.message.deleted
-		&& (props.message.saved || props.message.distributed || props.message.seen)
+		props.message.senderId === props.currentUserId &&
+		!props.message.deleted &&
+		(props.message.saved || props.message.distributed || props.message.seen)
 	)
 })
 
 const hasCurrentUserAvatar = computed(() => {
 	return props.messages.some(
-		message => message.senderId === props.currentUserId && message.avatar,
+		message => message.senderId === props.currentUserId && message.avatar
 	)
 })
 
 const hasSenderUserAvatar = computed(() => {
 	return props.messages.some(
-		message => message.senderId !== props.currentUserId && message.avatar,
+		message => message.senderId !== props.currentUserId && message.avatar
 	)
 })
 
 const isMessageSelected = computed(() => {
 	return (
-		props.messageSelectionEnabled
-		&& !!props.selectedMessages.find(
-			message => message._id === props.message._id,
-		)
+		props.messageSelectionEnabled &&
+		!!props.selectedMessages.find(message => message._id === props.message._id)
 	)
 })
 
 // Watchers
 watch(
 	() => props.newMessages,
-	(val) => {
+	val => {
 		if (!val.length || !props.showNewMessagesDivider) {
 			newMessage.value = {}
 			return
 		}
 
 		newMessage.value = val.reduce((res, obj) =>
-			obj.index < res.index ? obj : res,
+			obj.index < res.index ? obj : res
 		)
 	},
-	{ immediate: true, deep: true },
+	{ immediate: true, deep: true }
 )
 
 watch(
 	() => props.messageSelectionEnabled,
 	() => {
 		resetMessageHover()
-	},
+	}
 )
 
 // Lifecycle
@@ -175,7 +184,7 @@ onMounted(() => {
 	emit('message-added', {
 		message: props.message,
 		index: props.index,
-		ref: messageRef.value ?? undefined,
+		ref: messageRef.value ?? undefined
 	})
 })
 
@@ -183,8 +192,7 @@ onMounted(() => {
 function onHoverMessage() {
 	if (!props.messageSelectionEnabled) {
 		messageHover.value = true
-		if (canEditMessage())
-			hoverMessageId.value = props.message._id
+		if (canEditMessage()) hoverMessageId.value = props.message._id
 	}
 }
 
@@ -194,8 +202,7 @@ function canEditMessage() {
 
 function onLeaveMessage() {
 	if (!props.messageSelectionEnabled) {
-		if (!optionsOpened.value && !emojiOpened.value)
-			messageHover.value = false
+		if (!optionsOpened.value && !emojiOpened.value) messageHover.value = false
 		hoverMessageId.value = null
 	}
 }
@@ -205,8 +212,8 @@ function resetMessageHover() {
 	hoverMessageId.value = null
 }
 
-function openFile(file: MessageFileAction) {
-	emit('open-file', { message: props.message, file })
+function openFile(event: MessageFileAction) {
+	emit('open-file', { message: props.message, ...event })
 }
 
 function openUserTag(user: RoomUser | undefined) {
@@ -221,13 +228,19 @@ function messageActionHandler(action: MessageAction) {
 	}, 300)
 }
 
-function sendMessageReaction(payload: { emoji: string | { unicode: string }, reaction?: StringNumber[] | MessageReactionsType }) {
+function sendMessageReaction(payload: {
+	emoji: string | { unicode: string }
+	reaction?: StringNumber[] | MessageReactionsType
+}) {
 	const emoji = payload.emoji
 	const reaction = payload.reaction
 	emit('send-message-reaction', {
 		messageId: props.message._id,
 		reaction: typeof emoji === 'string' ? emoji : emoji.unicode,
-		remove: !!reaction && Array.isArray(reaction) && reaction.includes(props.currentUserId),
+		remove:
+			!!reaction &&
+			Array.isArray(reaction) &&
+			reaction.includes(props.currentUserId)
 	})
 	messageHover.value = false
 }
@@ -236,8 +249,7 @@ function selectMessage() {
 	if (props.messageSelectionEnabled) {
 		if (isMessageSelected.value) {
 			emit('unselect-message', props.message._id)
-		}
-		else {
+		} else {
 			emit('select-message', props.message)
 		}
 	}
@@ -297,7 +309,7 @@ function selectMessage() {
 				<div
 					class="vac-message-container"
 					:class="{
-						'vac-message-container-offset': messageOffset,
+						'vac-message-container-offset': messageOffset
 					}"
 				>
 					<div
@@ -307,18 +319,21 @@ function selectMessage() {
 							'vac-message-current': message.senderId === currentUserId,
 							'vac-message-deleted': message.deleted,
 							'vac-item-clickable': messageSelectionEnabled,
-							'vac-message-selected': isMessageSelected,
+							'vac-message-selected': isMessageSelected
 						}"
 						@mouseover="onHoverMessage"
 						@mouseleave="onLeaveMessage"
 					>
-						<div ref="emojiTarget" class="vac-emoji-wrapper vac-emoji-teleported" />
+						<div
+							ref="emojiTarget"
+							class="vac-emoji-wrapper vac-emoji-teleported"
+						/>
 
 						<div
 							v-if="showUsername"
 							class="vac-text-username"
 							:class="{
-								'vac-username-reply': !message.deleted && message.replyMessage,
+								'vac-username-reply': !message.deleted && message.replyMessage
 							}"
 						>
 							<span>{{ message.username }}</span>
@@ -375,8 +390,8 @@ function selectMessage() {
 								:message-id="message._id"
 								:src="message.files[0].url"
 								:message-selection-enabled="messageSelectionEnabled"
-								@update-progress-time="progressTime = ($event as string)"
-								@hover-audio-progress="hoverAudioProgress = ($event as boolean)"
+								@update-progress-time="progressTime = $event as string"
+								@hover-audio-progress="hoverAudioProgress = $event as boolean"
 							>
 								<template v-for="(i, name) in $slots" #[name]="data">
 									<slot :name="name" v-bind="data" />
@@ -445,13 +460,11 @@ function selectMessage() {
 						class="vac-failure-container vac-svg-button"
 						:class="{
 							'vac-failure-container-avatar':
-								message.avatar && message.senderId === currentUserId,
+								message.avatar && message.senderId === currentUserId
 						}"
 						@click="$emit('open-failed-message', { message })"
 					>
-						<div class="vac-failure-text">
-							!
-						</div>
+						<div class="vac-failure-text">!</div>
 					</div>
 				</slot>
 				<slot

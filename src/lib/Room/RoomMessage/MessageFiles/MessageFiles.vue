@@ -1,5 +1,13 @@
 <script setup lang="ts">
-import type { LinkOptions, Message, MessageFile as MessageFileType, RoomUser, TextFormatting } from '@/types'
+import type {
+	LinkOptions,
+	Message,
+	MessageFile as MessageFileType,
+	MessageOpenFileEvent,
+	OpenFileAction,
+	RoomUser,
+	TextFormatting
+} from '@/types'
 
 import { computed } from 'vue'
 import FormatMessage from '@/components/FormatMessage/FormatMessage.vue'
@@ -21,7 +29,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-	'open-file': [payload: { file: MessageFileType, action: string }]
+	'open-file': [payload: MessageOpenFileEvent]
 	'open-user-tag': [user: RoomUser | undefined]
 }>()
 
@@ -33,7 +41,11 @@ const otherFiles = computed(() => {
 	return props.message.files!.filter(file => !isImageVideoFile(file))
 })
 
-function openFile(event: Event, file: MessageFileType, action: string): void {
+function openFile(
+	event: Event,
+	file: MessageFileType,
+	action: OpenFileAction
+): void {
 	if (!props.messageSelectionEnabled) {
 		event.stopPropagation()
 		emit('open-file', { file, action })
@@ -70,7 +82,10 @@ function openFile(event: Event, file: MessageFileType, action: string): void {
 			/>
 			<div
 				class="vac-file-container"
-				:class="{ 'vac-file-container-progress': file.progress != null && file.progress >= 0 }"
+				:class="{
+					'vac-file-container-progress':
+						file.progress != null && file.progress >= 0
+				}"
 				@click="openFile($event, file, 'download')"
 			>
 				<div class="vac-svg-button">

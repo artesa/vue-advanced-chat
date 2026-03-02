@@ -215,6 +215,8 @@ export interface MessageFileAction {
 	action: string
 }
 
+export type OpenFileAction = 'preview' | 'download' | (string & {})
+
 export interface ToggleRoomsListEvent { opened: boolean }
 export type RoomInfoEvent = Room
 export interface FetchMessagesEvent { room: Room, options?: { reset?: boolean } }
@@ -233,10 +235,13 @@ export interface SearchRoomEvent { value: string, roomId: StringNumber }
 export interface RoomActionHandlerEvent { action: CustomAction, roomId: StringNumber }
 export interface MessageSelectionActionHandlerEvent { action: CustomAction, messages: Message[], roomId: StringNumber }
 
+export interface MessageOpenFileEvent { file: MessageFile, action: OpenFileAction };
+export type RoomOpenFileEvent = MessageOpenFileEvent & { message: Message }
+
 // Room component event payloads (without roomId)
 export type RoomSendMessageEvent = Omit<SendMessageEvent, 'roomId'>
 export type RoomEditMessageEvent = Omit<EditMessageEvent, 'roomId'>
-export interface RoomOpenFileEvent { message: Message, file: MessageFileAction }
+
 export type RoomOpenFailedMessageEvent = Omit<OpenFailedMessageEvent, 'roomId'>
 export type RoomMessageActionHandlerEvent = Omit<MessageActionHandlerEvent, 'roomId'>
 export type RoomSendMessageReactionEvent = Omit<SendMessageReactionEvent, 'roomId'>
