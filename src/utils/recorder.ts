@@ -135,7 +135,8 @@ export default class {
 
 		this.mediaRecorder.onstop = () => {
 			const finalDuration = this.pausedDuration + (Date.now() - this.startTime) / 1000
-			const blob = new Blob(this.chunks, { type: this.mimeType || this.mediaRecorder?.mimeType || 'audio/webm' })
+			const blobType = (this.mimeType || this.mediaRecorder?.mimeType || 'audio/webm').split(';')[0]
+			const blob = new Blob(this.chunks, { type: blobType })
 
 			const record: RecordResult = {
 				id: Date.now(),

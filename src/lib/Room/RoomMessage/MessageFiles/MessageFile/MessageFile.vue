@@ -93,7 +93,6 @@ function openFile(event: Event, action: string) {
 				:show="isImageLoading"
 				type="message-file"
 				:message-id="message._id"
-				:style="{ top: `${imageResponsive.loaderTop}px` }"
 			>
 				<template v-for="(idx, name) in $slots" #[name]="data">
 					<slot :name="name" v-bind="data" />
