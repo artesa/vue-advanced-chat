@@ -27,8 +27,6 @@ const props = withDefaults(
 	}
 )
 
-console.log(props.i18n)
-
 const emit = defineEmits<{
 	'add-emoji': [payload: { unicode: string }]
 	'open-emoji': [value: boolean]

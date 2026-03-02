@@ -152,8 +152,6 @@ const t = computed(() => {
 	}
 })
 
-console.log(t.value)
-
 const cssVars = computed(() => {
 	const defaultStyles = defaultThemeStyles[props.theme] as unknown as Record<
 		string,
