@@ -29,6 +29,7 @@ import type {
 	TextFormatting,
 	ToggleRoomsListEvent,
 	TypingMessageEvent,
+	sernameOptions,
 } from '@/types'
 
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
@@ -378,6 +379,7 @@ function openFile(options: RoomOpenFileEvent) {
 		emit('open-file', {
 			message,
 			file,
+			action,
 			defaultHandle: () => {
 				_openFile({ action, file, message })
 			},

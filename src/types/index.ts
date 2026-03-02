@@ -223,7 +223,7 @@ export interface FetchMessagesEvent { room: Room, options?: { reset?: boolean } 
 export interface SendMessageEvent { content: string, roomId: StringNumber, files?: MessageFile[], replyMessage?: Message | null, usersTag?: string[] }
 export interface EditMessageEvent { messageId: StringNumber, newContent: string, roomId: StringNumber, files?: MessageFile[], replyMessage?: Message | null, usersTag?: string[] }
 export interface DeleteMessageEvent { message: Message, roomId: StringNumber }
-export interface OpenFileEvent { message: Message, file: MessageFile, defaultHandle?: () => void }
+
 export type OpenUserTagEvent = unknown
 export interface OpenFailedMessageEvent { message: Message, roomId: StringNumber }
 export interface MenuActionHandlerEvent { action: CustomAction, roomId: StringNumber }
@@ -237,6 +237,7 @@ export interface MessageSelectionActionHandlerEvent { action: CustomAction, mess
 
 export interface MessageOpenFileEvent { file: MessageFile, action: OpenFileAction };
 export type RoomOpenFileEvent = MessageOpenFileEvent & { message: Message }
+export type OpenFileEvent = RoomOpenFileEvent & { defaultHandle?: () => void }
 
 // Room component event payloads (without roomId)
 export type RoomSendMessageEvent = Omit<SendMessageEvent, 'roomId'>
