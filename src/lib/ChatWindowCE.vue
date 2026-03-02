@@ -192,7 +192,7 @@ const castedProps = computed(() => ({
 	responsiveBreakpoint: props.responsiveBreakpoint,
 	singleRoom: castBoolean(props.singleRoom),
 	roomsListOpened: castBoolean(props.roomsListOpened),
-	i18n: castObject<Record<string, StringNumber>>(props.i18n),
+	i18n: castObject<PartialDeep<I18n>>(props.i18n),
 	currentUserId: props.currentUserId,
 	rooms: castArray<RoomType>(props.rooms),
 	roomsOrder: props.roomsOrder,

@@ -8,8 +8,8 @@ export interface UserStatus {
 export interface RoomUser {
 	_id: string
 	username: string
-	avatar: string
-	status: UserStatus
+	avatar?: string
+	status?: UserStatus
 }
 
 export interface MessageFile {
@@ -43,8 +43,8 @@ export interface LastMessage {
 export interface Room {
 	roomId: StringNumber
 	roomName: string
-	avatar: string
 	users: RoomUser[]
+  avatar?: string
 	unreadCount?: number
 	index?: StringNumber | Date
 	lastMessage?: LastMessage
