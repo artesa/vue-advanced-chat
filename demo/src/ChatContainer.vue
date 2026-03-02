@@ -6,7 +6,7 @@ import {
 	rooms as seedRooms,
 	users as seedUsers,
 } from '@/data/mock-data'
-import '@artesa/vue-advanced-chat/dist/style.css'
+import '@artesa/vue-advanced-chat/style.css'
 
 const dateFormatter = new Intl.DateTimeFormat('en-GB', {
 	day: 'numeric',

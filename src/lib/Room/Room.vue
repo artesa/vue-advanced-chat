@@ -42,8 +42,6 @@ const props = withDefaults(defineProps<{
 	showFiles: boolean
 	showAudio: boolean
 	showRoomHeader: boolean
-	audioBitRate: number
-	audioSampleRate: number
 	showEmojis: boolean
 	showReactionEmojis: boolean
 	showNewMessagesDivider: boolean
@@ -598,8 +596,6 @@ function onDropFiles(event: DragEvent) {
 			:templates-text="templatesText"
 			:text-formatting="textFormatting"
 			:link-options="linkOptions"
-			:audio-bit-rate="audioBitRate"
-			:audio-sample-rate="audioSampleRate"
 			:init-reply-message="initReplyMessage"
 			:init-edit-message="initEditMessage"
 			:dropped-files="droppedFiles"

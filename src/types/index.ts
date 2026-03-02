@@ -185,8 +185,6 @@ export interface Props {
 	showSendIcon?: boolean
 	showFiles?: boolean
 	showAudio?: boolean
-	audioBitRate?: number
-	audioSampleRate?: number
 	showEmojis?: boolean
 	showReactionEmojis?: boolean
 	showNewMessagesDivider?: boolean
@@ -212,24 +210,20 @@ export interface Props {
 	showMessagesStarted?: boolean
 }
 
-export interface Events {
-	'toggle-rooms-list': { opened: boolean }
-	'room-info': Room
-	'fetch-messages': { room: Room, options?: { reset?: boolean } }
-	'send-message': { content: string, roomId: StringNumber, files?: MessageFile[], replyMessage?: Message, usersTag?: string[] }
-	'edit-message': { messageId: StringNumber, newContent: string, roomId: StringNumber, files?: MessageFile[], replyMessage?: Message, usersTag?: string[] }
-	'delete-message': { message: unknown, roomId: StringNumber }
-	'open-file': { message: Message, file: MessageFile, defaultHandle?: () => void }
-	'open-user-tag': unknown
-	'open-failed-message': { message: Message, roomId: StringNumber }
-	'menu-action-handler': { action: CustomAction, roomId: StringNumber }
-	'message-action-handler': { action: MessageAction, message: Message, roomId: StringNumber }
-	'send-message-reaction': { messageId: StringNumber, reaction: string, remove: boolean, roomId: StringNumber }
-	'typing-message': { message: unknown, roomId: StringNumber }
-	'textarea-action-handler': { message: unknown, roomId: StringNumber }
-	'fetch-more-rooms': void
-	'add-room': void
-	'search-room': { value: string, roomId: StringNumber }
-	'room-action-handler': { action: CustomAction, roomId: StringNumber }
-	'message-selection-action-handler': { action: CustomAction, messages: Message[], roomId: StringNumber }
-}
+export type ToggleRoomsListEvent = { opened: boolean }
+export type RoomInfoEvent = Room
+export type FetchMessagesEvent = { room: Room, options?: { reset?: boolean } }
+export type SendMessageEvent = { content: string, roomId: StringNumber, files?: MessageFile[], replyMessage?: Message, usersTag?: string[] }
+export type EditMessageEvent = { messageId: StringNumber, newContent: string, roomId: StringNumber, files?: MessageFile[], replyMessage?: Message, usersTag?: string[] }
+export type DeleteMessageEvent = { message: unknown, roomId: StringNumber }
+export type OpenFileEvent = { message: Message, file: MessageFile, defaultHandle?: () => void }
+export type OpenUserTagEvent = unknown
+export type OpenFailedMessageEvent = { message: Message, roomId: StringNumber }
+export type MenuActionHandlerEvent = { action: CustomAction, roomId: StringNumber }
+export type MessageActionHandlerEvent = { action: MessageAction, message: Message, roomId: StringNumber }
+export type SendMessageReactionEvent = { messageId: StringNumber, reaction: string, remove: boolean, roomId: StringNumber }
+export type TypingMessageEvent = { message: unknown, roomId: StringNumber }
+export type TextareaActionHandlerEvent = { message: unknown, roomId: StringNumber }
+export type SearchRoomEvent = { value: string, roomId: StringNumber }
+export type RoomActionHandlerEvent = { action: CustomAction, roomId: StringNumber }
+export type MessageSelectionActionHandlerEvent = { action: CustomAction, messages: Message[], roomId: StringNumber }

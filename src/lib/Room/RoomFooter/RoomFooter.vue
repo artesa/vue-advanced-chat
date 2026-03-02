@@ -11,7 +11,7 @@ import filteredItems from '@/utils/filter-items'
 import { detectMobile } from '@/utils/mobile-detection'
 import vClickOutside from '@/utils/on-click-outside'
 
-import Recorder from '@/utils/recorder'
+import Recorder, { mimeToExtension } from '@/utils/recorder'
 
 import RoomEmojis from './RoomEmojis/RoomEmojis.vue'
 import RoomFiles from './RoomFiles/RoomFiles.vue'
@@ -39,8 +39,6 @@ const props = withDefaults(defineProps<{
 	userTagsEnabled: boolean
 	emojisSuggestionEnabled: boolean
 	templatesText: TemplateText[] | null
-	audioBitRate: number
-	audioSampleRate: number
 	initReplyMessage: Message | null
 	initEditMessage: Message | null
 	droppedFiles: File[] | null
@@ -75,7 +73,6 @@ const fileDialog = ref(false)
 const selectUsersTagItem = ref<boolean | null>(null)
 const selectEmojiItem = ref<boolean | null>(null)
 const selectTemplatesTextItem = ref<boolean | null>(null)
-const format = ref('mp3')
 const activeUpOrDownEmojis = ref<number | null>(null)
 const activeUpOrDownUsersTag = ref<number | null>(null)
 const activeUpOrDownTemplatesText = ref<number | null>(null)
@@ -92,11 +89,6 @@ function initRecorder() {
 	isRecording.value = false
 
 	return new Recorder({
-		bitRate: Number(props.audioBitRate),
-		sampleRate: Number(props.audioSampleRate),
-		beforeRecording: undefined,
-		afterRecording: undefined,
-		pauseRecording: undefined,
 		micFailed,
 	})
 }
@@ -407,7 +399,7 @@ function removeFile(index: number) {
 	focusTextarea()
 }
 
-function toggleRecorder(recording: boolean) {
+async function toggleRecorder(recording: boolean) {
 	isRecording.value = recording
 
 	if (!recorder.value.isRecording) {
@@ -415,20 +407,21 @@ function toggleRecorder(recording: boolean) {
 	}
 	else {
 		try {
-			recorder.value.stop()
+			await recorder.value.stop()
 
 			const record = recorder.value.records[0]
+			const extension = mimeToExtension(recorder.value.mimeType)
 
 			files.value.push({
 				blob: record.blob,
-				name: `audio.${format.value}`,
+				name: `audio.${extension}`,
 				size: record.blob.size,
 				duration: record.duration,
 				type: record.blob.type,
 				audio: true,
 				localUrl: URL.createObjectURL(record.blob),
 				url: '',
-				extension: format.value,
+				extension,
 			})
 
 			recorder.value = initRecorder()
@@ -440,10 +433,10 @@ function toggleRecorder(recording: boolean) {
 	}
 }
 
-function stopRecorder() {
+async function stopRecorder() {
 	if (recorder.value.isRecording) {
 		try {
-			recorder.value.stop()
+			await recorder.value.stop()
 			recorder.value = initRecorder()
 		}
 		catch {

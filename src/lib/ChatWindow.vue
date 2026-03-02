@@ -2,15 +2,31 @@
 import type {
 	AutoScroll,
 	CustomAction,
-	Events,
+	DeleteMessageEvent,
+	EditMessageEvent,
+	FetchMessagesEvent,
 	LinkOptions,
+	MenuActionHandlerEvent,
 	Message,
 	MessageAction,
+	MessageActionHandlerEvent,
 	MessageFile,
+	MessageSelectionActionHandlerEvent,
+	OpenFailedMessageEvent,
+	OpenFileEvent,
+	OpenUserTagEvent,
+	RoomActionHandlerEvent,
+	RoomInfoEvent,
 	Room as RoomType,
+	SearchRoomEvent,
+	SendMessageEvent,
+	SendMessageReactionEvent,
 	StringNumber,
 	TemplateText,
+	TextareaActionHandlerEvent,
 	TextFormatting,
+	ToggleRoomsListEvent,
+	TypingMessageEvent,
 	UsernameOptions,
 } from '@/types'
 
@@ -53,8 +69,6 @@ const props = withDefaults(
 		showSendIcon?: boolean
 		showFiles?: boolean
 		showAudio?: boolean
-		audioBitRate?: number
-		audioSampleRate?: number
 		showEmojis?: boolean
 		showReactionEmojis?: boolean
 		showNewMessagesDivider?: boolean
@@ -121,9 +135,6 @@ const props = withDefaults(
 		showSendIcon: true,
 		showFiles: true,
 		showAudio: true,
-		audioBitRate: 128,
-		audioSampleRate: new (window.AudioContext || window.webkitAudioContext)()
-			.sampleRate,
 		showEmojis: true,
 		showReactionEmojis: true,
 		showNewMessagesDivider: true,
@@ -151,25 +162,25 @@ const props = withDefaults(
 )
 
 const emit = defineEmits<{
-	'toggle-rooms-list': [payload: Events['toggle-rooms-list']]
-	'room-info': [payload: Events['room-info']]
-	'fetch-messages': [payload: Events['fetch-messages']]
-	'send-message': [payload: Events['send-message']]
-	'edit-message': [payload: Events['edit-message']]
-	'delete-message': [payload: Events['delete-message']]
-	'open-file': [payload: Events['open-file']]
-	'open-user-tag': [payload: Events['open-user-tag']]
-	'open-failed-message': [payload: Events['open-failed-message']]
-	'menu-action-handler': [payload: Events['menu-action-handler']]
-	'message-action-handler': [payload: Events['message-action-handler']]
-	'send-message-reaction': [payload: Events['send-message-reaction']]
-	'typing-message': [payload: Events['typing-message']]
-	'textarea-action-handler': [payload: Events['textarea-action-handler']]
+	'toggle-rooms-list': [payload: ToggleRoomsListEvent]
+	'room-info': [payload: RoomInfoEvent]
+	'fetch-messages': [payload: FetchMessagesEvent]
+	'send-message': [payload: SendMessageEvent]
+	'edit-message': [payload: EditMessageEvent]
+	'delete-message': [payload: DeleteMessageEvent]
+	'open-file': [payload: OpenFileEvent]
+	'open-user-tag': [payload: OpenUserTagEvent]
+	'open-failed-message': [payload: OpenFailedMessageEvent]
+	'menu-action-handler': [payload: MenuActionHandlerEvent]
+	'message-action-handler': [payload: MessageActionHandlerEvent]
+	'send-message-reaction': [payload: SendMessageReactionEvent]
+	'typing-message': [payload: TypingMessageEvent]
+	'textarea-action-handler': [payload: TextareaActionHandlerEvent]
 	'fetch-more-rooms': []
 	'add-room': []
-	'search-room': [payload: Events['search-room']]
-	'room-action-handler': [payload: Events['room-action-handler']]
-	'message-selection-action-handler': [payload: Events['message-selection-action-handler']]
+	'search-room': [payload: SearchRoomEvent]
+	'room-action-handler': [payload: RoomActionHandlerEvent]
+	'message-selection-action-handler': [payload: MessageSelectionActionHandlerEvent]
 }>()
 
 // Data
@@ -340,16 +351,14 @@ function fetchMessages(options?: { reset?: boolean }) {
 	emit('fetch-messages', { room: room.value as RoomType, options })
 }
 
-function sendMessage(ev: unknown) {
-	const message = ev as Events['send-message']
+function sendMessage(message: SendMessageEvent) {
 	emit('send-message', {
 		...message,
 		roomId: (room.value as RoomType).roomId,
 	})
 }
 
-function editMessage(ev: unknown) {
-	const message = ev as Events['edit-message']
+function editMessage(message: EditMessageEvent) {
 	emit('edit-message', {
 		...message,
 		roomId: (room.value as RoomType).roomId,
@@ -502,8 +511,6 @@ function textareaActionHandler(message: unknown) {
 				:show-send-icon="showSendIcon!"
 				:show-files="showFiles!"
 				:show-audio="showAudio!"
-				:audio-bit-rate="audioBitRate"
-				:audio-sample-rate="audioSampleRate"
 				:show-emojis="showEmojis!"
 				:show-reaction-emojis="showReactionEmojis!"
 				:show-new-messages-divider="showNewMessagesDivider!"

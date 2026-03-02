@@ -6,5 +6,4 @@ export default antfu({
   stylistic: {
     indent: 'tab',
   },
-  ignores: ['src/utils/lamejs/*.js'],
 })

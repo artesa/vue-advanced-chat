@@ -11,24 +11,4 @@ export function register() {
 	}
 }
 
-export type {
-	AutoScroll,
-	CustomAction,
-	Events,
-	LastMessage,
-	LinkOptions,
-	Message,
-	MessageAction,
-	MessageFile,
-	MessageReactions,
-	Props,
-	Room,
-	RoomUser,
-	StringNumber,
-	TemplateText,
-	TextFormatting,
-	TextMessages,
-	ThemeStyles,
-	UsernameOptions,
-	UserStatus,
-} from './types'
+export type * from './types'
