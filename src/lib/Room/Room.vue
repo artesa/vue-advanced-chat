@@ -1,6 +1,480 @@
+<script setup lang="ts">
+import type {
+	AutoScroll,
+	CustomAction,
+	LinkOptions,
+	Message,
+	MessageAction,
+	Room,
+	RoomEditMessageEvent,
+	RoomMessageActionHandlerEvent,
+	RoomMessageSelectionActionHandlerEvent,
+	RoomOpenFailedMessageEvent,
+	RoomOpenFileEvent,
+	RoomSendMessageEvent,
+	RoomSendMessageReactionEvent,
+	RoomUser,
+	StringNumber,
+	TemplateText,
+	TextFormatting,
+	I18n,
+	UsernameOptions
+} from '@/types'
+
+import { computed, onMounted, ref, useTemplateRef, watch } from 'vue'
+import Loader from '@/components/Loader/Loader.vue'
+
+import SvgIcon from '@/components/SvgIcon/SvgIcon.vue'
+
+import RoomFooter from './RoomFooter/RoomFooter.vue'
+import RoomHeader from './RoomHeader/RoomHeader.vue'
+import RoomMessage from './RoomMessage/RoomMessage.vue'
+
+const props = withDefaults(
+	defineProps<{
+		currentUserId: StringNumber
+		i18n: I18n
+		singleRoom: boolean
+		showRoomsList: boolean
+		isMobile: boolean
+		rooms: Room[]
+		roomId: StringNumber
+		loadFirstRoom: boolean
+		messages: Message[]
+		roomMessage?: string | null
+		messagesLoaded: boolean
+		menuActions: CustomAction[]
+		messageActions: MessageAction[]
+		messageSelectionActions: CustomAction[]
+		autoScroll: AutoScroll
+		showSendIcon: boolean
+		showFiles: boolean
+		showAudio: boolean
+		showRoomHeader?: boolean
+		showEmojis: boolean
+		showReactionEmojis: boolean
+		showNewMessagesDivider: boolean
+		showFooter: boolean
+		acceptedFiles: string
+		captureFiles?: string
+		multipleFiles?: boolean
+		textFormatting: TextFormatting
+		linkOptions: LinkOptions
+		loadingRooms: boolean
+		roomInfoEnabled: boolean
+		textareaActionEnabled: boolean
+		textareaAutoFocus: boolean
+		userTagsEnabled: boolean
+		emojisSuggestionEnabled: boolean
+		scrollDistance: number
+		templatesText?: TemplateText[] | null
+		usernameOptions: UsernameOptions
+		emojiDataSource?: string | undefined
+		showMessagesStartedText?: boolean
+	}>(),
+	{
+		roomMessage: null,
+		showRoomHeader: true,
+		multipleFiles: true,
+		templatesText: null,
+		emojiDataSource: undefined,
+		showMessagesStartedText: true
+	}
+)
+
+const emit = defineEmits<{
+	'toggle-rooms-list': []
+	'room-info': []
+	'menu-action-handler': [payload: CustomAction]
+	'message-selection-action-handler': [
+		payload: RoomMessageSelectionActionHandlerEvent
+	]
+	'edit-message': [payload: RoomEditMessageEvent]
+	'send-message': [payload: RoomSendMessageEvent]
+	'delete-message': [payload: Message]
+	'message-action-handler': [payload: RoomMessageActionHandlerEvent]
+	'fetch-messages': []
+	'send-message-reaction': [payload: RoomSendMessageReactionEvent]
+	'typing-message': [payload: string | null]
+	'open-file': [payload: RoomOpenFileEvent]
+	'open-user-tag': [payload: RoomUser | undefined]
+	'open-failed-message': [payload: RoomOpenFailedMessageEvent]
+	'textarea-action-handler': [payload: string]
+}>()
+
+const root = useTemplateRef<HTMLElement>('root')
+const scrollContainer = useTemplateRef<HTMLElement>('scrollContainer')
+
+const editedMessageId = ref<StringNumber | null>(null)
+const initReplyMessage = ref<Message | null>(null)
+const initEditMessage = ref<Message | null>(null)
+const loadingMessages = ref(false)
+const observer = ref<IntersectionObserver | null>(null)
+const showLoader = ref(true)
+const loadingMoreMessages = ref(false)
+const scrollIcon = ref(false)
+const scrollMessagesCount = ref(0)
+const newMessages = ref<Array<{ _id: string; index: number }>>([])
+const messageSelectionEnabled = ref(false)
+const selectedMessages = ref<Message[]>([])
+const droppedFiles = ref<File[]>([])
+
+const room = computed<Room | Record<string, never>>(() => {
+	return props.rooms.find(r => r.roomId === props.roomId) || {}
+})
+
+const showNoMessages = computed(() => {
+	return (
+		props.roomId &&
+		!props.messages.length &&
+		!loadingMessages.value &&
+		!props.loadingRooms
+	)
+})
+
+const showNoRoom = computed(() => {
+	const noRoomSelected =
+		(!props.rooms.length && !props.loadingRooms) ||
+		(!props.roomId && !props.loadFirstRoom)
+
+	if (noRoomSelected) {
+		updateLoadingMessages(false)
+	}
+	return noRoomSelected
+})
+
+const showMessagesStarted = computed(() => {
+	return (
+		props.messages.length &&
+		props.messagesLoaded &&
+		props.showMessagesStartedText
+	)
+})
+
+watch(
+	() => props.roomId,
+	() => {
+		onRoomChanged()
+	},
+	{ immediate: true }
+)
+
+watch(
+	() => props.messages,
+	(newVal, oldVal) => {
+		newVal.forEach((message, i) => {
+			if (
+				props.showNewMessagesDivider &&
+				!message.seen &&
+				message.senderId !== props.currentUserId
+			) {
+				newMessages.value.push({
+					_id: message._id,
+					index: i
+				})
+			}
+		})
+		if (oldVal?.length === newVal?.length - 1) {
+			newMessages.value = []
+		}
+		setTimeout(() => (loadingMoreMessages.value = false))
+	},
+	{ deep: true }
+)
+
+watch(
+	() => props.messagesLoaded,
+	val => {
+		if (val) updateLoadingMessages(false)
+	}
+)
+
+onMounted(() => {
+	newMessages.value = []
+})
+
+function updateLoadingMessages(val: boolean) {
+	loadingMessages.value = val
+
+	if (!val) {
+		setTimeout(() => initIntersectionObserver())
+	}
+}
+
+function initIntersectionObserver() {
+	if (observer.value) {
+		showLoader.value = true
+		observer.value.disconnect()
+	}
+
+	const loader = root.value?.querySelector('#infinite-loader-messages')
+
+	if (loader) {
+		const options = {
+			root: root.value?.querySelector('#messages-list'),
+			rootMargin: `${props.scrollDistance}px`,
+			threshold: 0
+		}
+
+		observer.value = new IntersectionObserver(entries => {
+			if (entries[0].isIntersecting) {
+				loadMoreMessages()
+			}
+		}, options)
+
+		observer.value.observe(loader)
+	}
+}
+
+function preventTopScroll() {
+	const container = scrollContainer.value
+	if (!container) return
+	const prevScrollHeight = container.scrollHeight
+
+	const resizeObserver = new ResizeObserver(_ => {
+		if (container.scrollHeight !== prevScrollHeight) {
+			if (scrollContainer.value) {
+				scrollContainer.value.scrollTo({
+					top: container.scrollHeight - prevScrollHeight
+				})
+				resizeObserver.disconnect()
+			}
+		}
+	})
+
+	for (let i = 0; i < container.children.length; i++) {
+		resizeObserver.observe(container.children[i])
+	}
+}
+
+function touchStart(touchEvent: TouchEvent) {
+	if (props.singleRoom) return
+
+	if (touchEvent.changedTouches.length === 1) {
+		const posXStart = touchEvent.changedTouches[0].clientX
+		const posYStart = touchEvent.changedTouches[0].clientY
+
+		addEventListener(
+			'touchend',
+			ev => touchEnd(ev as TouchEvent, posXStart, posYStart),
+			{ once: true }
+		)
+	}
+}
+
+function touchEnd(
+	touchEvent: TouchEvent,
+	posXStart: number,
+	posYStart: number
+) {
+	if (touchEvent.changedTouches.length === 1) {
+		const posXEnd = touchEvent.changedTouches[0].clientX
+		const posYEnd = touchEvent.changedTouches[0].clientY
+
+		const swippedRight = posXEnd - posXStart > 100
+		const swippedVertically = Math.abs(posYEnd - posYStart) > 50
+
+		if (swippedRight && !swippedVertically) {
+			emit('toggle-rooms-list')
+		}
+	}
+}
+
+function onRoomChanged() {
+	updateLoadingMessages(true)
+	scrollIcon.value = false
+	scrollMessagesCount.value = 0
+	resetMessageSelection()
+
+	const unwatch = watch(
+		() => props.messages,
+		val => {
+			if (!val || !val.length) return
+
+			const element = scrollContainer.value
+			if (!element) return
+
+			unwatch()
+
+			setTimeout(() => {
+				element.scrollTo({ top: element.scrollHeight })
+				updateLoadingMessages(false)
+			})
+		}
+	)
+}
+
+function resetMessageSelection() {
+	messageSelectionEnabled.value = false
+	selectedMessages.value = []
+}
+
+function selectMessage(message: Message) {
+	selectedMessages.value.push(message)
+}
+
+function unselectMessage(messageId: string) {
+	selectedMessages.value = selectedMessages.value.filter(
+		message => message._id !== messageId
+	)
+}
+
+function onMessageAdded({
+	message,
+	index,
+	ref: messageRef
+}: {
+	message: Message
+	index: number
+	ref: HTMLElement | undefined
+}) {
+	if (index !== props.messages.length - 1 || !messageRef) return
+
+	const autoScrollOffset = messageRef.offsetHeight + 60
+
+	setTimeout(() => {
+		const container = scrollContainer.value
+		let scrolledUp = false
+
+		if (container) {
+			scrolledUp = getBottomScroll(container) > autoScrollOffset
+		}
+
+		if (message.senderId === props.currentUserId) {
+			if (scrolledUp) {
+				if (props.autoScroll.send?.newAfterScrollUp) {
+					scrollToBottom()
+				}
+			} else {
+				if (props.autoScroll.send?.new) {
+					scrollToBottom()
+				}
+			}
+		} else {
+			if (scrolledUp) {
+				if (props.autoScroll.receive?.newAfterScrollUp) {
+					scrollToBottom()
+				} else {
+					scrollIcon.value = true
+					scrollMessagesCount.value++
+				}
+			} else {
+				if (props.autoScroll.receive?.new) {
+					scrollToBottom()
+				} else {
+					scrollIcon.value = true
+					scrollMessagesCount.value++
+				}
+			}
+		}
+	})
+}
+
+function onContainerScroll(e: Event) {
+	if (!e.target) return
+
+	const bottomScroll = getBottomScroll(e.target as HTMLElement)
+	if (bottomScroll < 60) scrollMessagesCount.value = 0
+	scrollIcon.value = bottomScroll > 500 || !!scrollMessagesCount.value
+}
+
+function loadMoreMessages() {
+	if (loadingMessages.value) return
+
+	setTimeout(
+		() => {
+			if (loadingMoreMessages.value) return
+
+			if (props.messagesLoaded || !props.roomId) {
+				loadingMoreMessages.value = false
+				showLoader.value = false
+				return
+			}
+
+			preventTopScroll()
+			emit('fetch-messages')
+			loadingMoreMessages.value = true
+		},
+		// prevent scroll bouncing speed
+		500
+	)
+}
+
+function messageActionHandler({
+	action,
+	message
+}: RoomMessageActionHandlerEvent) {
+	switch (action.name) {
+		case 'replyMessage':
+			initReplyMessage.value = message
+			setTimeout(() => {
+				initReplyMessage.value = null
+			})
+			return
+		case 'editMessage':
+			initEditMessage.value = message
+			setTimeout(() => {
+				initEditMessage.value = null
+			})
+			return
+		case 'deleteMessage':
+			return emit('delete-message', message)
+		case 'selectMessages':
+			selectedMessages.value = [message]
+			messageSelectionEnabled.value = true
+			return
+		default:
+			return emit('message-action-handler', { action, message })
+	}
+}
+
+function messageSelectionActionHandler(action: CustomAction) {
+	emit('message-selection-action-handler', {
+		action,
+		messages: selectedMessages.value
+	})
+	resetMessageSelection()
+}
+
+function sendMessageReaction(messageReaction: RoomSendMessageReactionEvent) {
+	emit('send-message-reaction', messageReaction)
+}
+
+function getBottomScroll(element: HTMLElement) {
+	const { scrollHeight, clientHeight, scrollTop } = element
+	return scrollHeight - clientHeight - scrollTop
+}
+
+function scrollToBottom() {
+	setTimeout(() => {
+		const element = scrollContainer.value
+		if (element) {
+			element.classList.add('vac-scroll-smooth')
+			element.scrollTo({ top: element.scrollHeight, behavior: 'smooth' })
+			setTimeout(() => element.classList.remove('vac-scroll-smooth'))
+		}
+	}, 50)
+}
+
+function openFile(event: RoomOpenFileEvent) {
+	emit('open-file', event)
+}
+
+function openUserTag(user: RoomUser | undefined) {
+	emit('open-user-tag', user)
+}
+
+function onDropFiles(event: DragEvent) {
+	if (props.showFiles) {
+		droppedFiles.value = Array.from(event.dataTransfer?.files || [])
+	}
+}
+</script>
+
 <template>
 	<div
 		v-show="(isMobile && !showRoomsList) || !isMobile || singleRoom"
+		ref="root"
 		class="vac-col-messages"
 		@drop.prevent="onDropFiles"
 		@dragenter.prevent
@@ -10,33 +484,33 @@
 	>
 		<slot v-if="showNoRoom" name="no-room-selected">
 			<div class="vac-container-center vac-room-empty">
-				<div>{{ textMessages.ROOM_EMPTY }}</div>
+				<div>{{ i18n.roomEmpty }}</div>
 			</div>
 		</slot>
 
-		<room-header
+		<RoomHeader
 			v-else-if="showRoomHeader"
 			:current-user-id="currentUserId"
-			:text-messages="textMessages"
+			:i18n="i18n"
 			:single-room="singleRoom"
 			:show-rooms-list="showRoomsList"
 			:is-mobile="isMobile"
 			:room-info-enabled="roomInfoEnabled"
 			:menu-actions="menuActions"
-			:room="room"
+			:room="room as any"
 			:message-selection-enabled="messageSelectionEnabled"
 			:message-selection-actions="messageSelectionActions"
 			:selected-messages-total="selectedMessages.length"
-			@toggle-rooms-list="$emit('toggle-rooms-list')"
-			@room-info="$emit('room-info')"
-			@menu-action-handler="$emit('menu-action-handler', $event)"
+			@toggle-rooms-list="emit('toggle-rooms-list')"
+			@room-info="emit('room-info')"
+			@menu-action-handler="emit('menu-action-handler', $event)"
 			@message-selection-action-handler="messageSelectionActionHandler"
 			@cancel-message-selection="messageSelectionEnabled = false"
 		>
 			<template v-for="(i, name) in $slots" #[name]="data">
 				<slot :name="name" v-bind="data" />
 			</template>
-		</room-header>
+		</RoomHeader>
 
 		<div
 			id="messages-list"
@@ -45,22 +519,22 @@
 			:class="{ 'vac-no-room-header': !showRoomHeader }"
 			@scroll="onContainerScroll"
 		>
-			<loader :show="loadingMessages" type="messages">
+			<Loader :show="loadingMessages" type="messages">
 				<template v-for="(idx, name) in $slots" #[name]="data">
 					<slot :name="name" v-bind="data" />
 				</template>
-			</loader>
+			</Loader>
 			<div class="vac-messages-container">
 				<div :class="{ 'vac-messages-hidden': loadingMessages }">
 					<transition name="vac-fade-message">
 						<div>
 							<div v-if="showNoMessages" class="vac-text-started">
 								<slot name="messages-empty">
-									{{ textMessages.MESSAGES_EMPTY }}
+									{{ i18n.messagesEmpty }}
 								</slot>
 							</div>
 							<div v-if="showMessagesStarted" class="vac-text-started">
-								{{ textMessages.CONVERSATION_STARTED }} {{ messages[0].date }}
+								{{ i18n.conversationStarted }} {{ messages[0].date }}
 							</div>
 						</div>
 					</transition>
@@ -68,23 +542,23 @@
 						v-if="messages.length && !messagesLoaded"
 						id="infinite-loader-messages"
 					>
-						<loader :show="true" :infinite="true" type="infinite-messages">
+						<Loader :show="true" :infinite="true" type="infinite-messages">
 							<template v-for="(idx, name) in $slots" #[name]="data">
 								<slot :name="name" v-bind="data" />
 							</template>
-						</loader>
+						</Loader>
 					</div>
 					<transition-group :key="roomId" name="vac-fade-message" tag="span">
 						<div v-for="(m, i) in messages" :key="m.indexId || m._id">
-							<room-message
+							<RoomMessage
 								:current-user-id="currentUserId"
 								:message="m"
 								:index="i"
 								:messages="messages"
 								:edited-message-id="editedMessageId"
 								:message-actions="messageActions"
-								:room-users="room.users"
-								:text-messages="textMessages"
+								:room-users="(room as any).users"
+								:i18n="i18n"
 								:new-messages="newMessages"
 								:show-reaction-emojis="showReactionEmojis"
 								:show-new-messages-divider="showNewMessagesDivider"
@@ -98,7 +572,7 @@
 								@message-action-handler="messageActionHandler"
 								@open-file="openFile"
 								@open-user-tag="openUserTag"
-								@open-failed-message="$emit('open-failed-message', $event)"
+								@open-failed-message="emit('open-failed-message', $event)"
 								@send-message-reaction="sendMessageReaction"
 								@select-message="selectMessage"
 								@unselect-message="unselectMessage"
@@ -106,7 +580,7 @@
 								<template v-for="(idx, name) in $slots" #[name]="data">
 									<slot :name="name" v-bind="data" />
 								</template>
-							</room-message>
+							</RoomMessage>
 						</div>
 					</transition-group>
 				</div>
@@ -124,17 +598,17 @@
 						</div>
 					</transition>
 					<slot name="scroll-icon">
-						<svg-icon name="dropdown" param="scroll" />
+						<SvgIcon name="dropdown" param="scroll" />
 					</slot>
 				</div>
 			</transition>
 		</div>
 
-		<room-footer
-			:room="room"
+		<RoomFooter
+			:room="room as any"
 			:room-id="roomId"
 			:room-message="roomMessage"
-			:text-messages="textMessages"
+			:i18n="i18n"
 			:show-send-icon="showSendIcon"
 			:show-files="showFiles"
 			:show-audio="showAudio"
@@ -150,429 +624,19 @@
 			:templates-text="templatesText"
 			:text-formatting="textFormatting"
 			:link-options="linkOptions"
-			:audio-bit-rate="audioBitRate"
-			:audio-sample-rate="audioSampleRate"
 			:init-reply-message="initReplyMessage"
 			:init-edit-message="initEditMessage"
 			:dropped-files="droppedFiles"
 			:emoji-data-source="emojiDataSource"
-			@update-edited-message-id="editedMessageId = $event"
-			@edit-message="$emit('edit-message', $event)"
-			@send-message="$emit('send-message', $event)"
-			@typing-message="$emit('typing-message', $event)"
-			@textarea-action-handler="$emit('textarea-action-handler', $event)"
+			@update-edited-message-id="editedMessageId = $event ?? null"
+			@edit-message="emit('edit-message', $event)"
+			@send-message="emit('send-message', $event)"
+			@typing-message="emit('typing-message', $event)"
+			@textarea-action-handler="emit('textarea-action-handler', $event)"
 		>
 			<template v-for="(idx, name) in $slots" #[name]="data">
 				<slot :name="name" v-bind="data" />
 			</template>
-		</room-footer>
+		</RoomFooter>
 	</div>
 </template>
-
-<script>
-import Loader from '../../components/Loader/Loader'
-import SvgIcon from '../../components/SvgIcon/SvgIcon'
-
-import RoomHeader from './RoomHeader/RoomHeader'
-import RoomFooter from './RoomFooter/RoomFooter'
-import RoomMessage from './RoomMessage/RoomMessage'
-
-export default {
-	name: 'ChatRoom',
-	components: {
-		Loader,
-		SvgIcon,
-		RoomHeader,
-		RoomFooter,
-		RoomMessage
-	},
-
-	props: {
-		currentUserId: { type: [String, Number], required: true },
-		textMessages: { type: Object, required: true },
-		singleRoom: { type: Boolean, required: true },
-		showRoomsList: { type: Boolean, required: true },
-		isMobile: { type: Boolean, required: true },
-		rooms: { type: Array, required: true },
-		roomId: { type: [String, Number], required: true },
-		loadFirstRoom: { type: Boolean, required: true },
-		messages: { type: Array, required: true },
-		roomMessage: { type: String, default: null },
-		messagesLoaded: { type: Boolean, required: true },
-		menuActions: { type: Array, required: true },
-		messageActions: { type: Array, required: true },
-		messageSelectionActions: { type: Array, required: true },
-		autoScroll: { type: Object, required: true },
-		showSendIcon: { type: Boolean, required: true },
-		showFiles: { type: Boolean, required: true },
-		showAudio: { type: Boolean, required: true },
-		showRoomHeader: { type: Boolean, default: true },
-		audioBitRate: { type: Number, required: true },
-		audioSampleRate: { type: Number, required: true },
-		showEmojis: { type: Boolean, required: true },
-		showReactionEmojis: { type: Boolean, required: true },
-		showNewMessagesDivider: { type: Boolean, required: true },
-		showFooter: { type: Boolean, required: true },
-		acceptedFiles: { type: String, required: true },
-		captureFiles: { type: String, required: true },
-		multipleFiles: { type: Boolean, default: true },
-		textFormatting: { type: Object, required: true },
-		linkOptions: { type: Object, required: true },
-		loadingRooms: { type: Boolean, required: true },
-		roomInfoEnabled: { type: Boolean, required: true },
-		textareaActionEnabled: { type: Boolean, required: true },
-		textareaAutoFocus: { type: Boolean, required: true },
-		userTagsEnabled: { type: Boolean, required: true },
-		emojisSuggestionEnabled: { type: Boolean, required: true },
-		scrollDistance: { type: Number, required: true },
-		templatesText: { type: Array, default: null },
-		usernameOptions: { type: Object, required: true },
-		emojiDataSource: { type: String, default: undefined },
-		showMessagesStartedText: { type: Boolean, default: true }
-	},
-
-	emits: [
-		'toggle-rooms-list',
-		'room-info',
-		'menu-action-handler',
-		'message-selection-action-handler',
-		'edit-message',
-		'send-message',
-		'delete-message',
-		'message-action-handler',
-		'fetch-messages',
-		'send-message-reaction',
-		'typing-message',
-		'open-file',
-		'open-user-tag',
-		'open-failed-message',
-		'textarea-action-handler'
-	],
-
-	data() {
-		return {
-			editedMessageId: null,
-			initReplyMessage: null,
-			initEditMessage: null,
-			loadingMessages: false,
-			observer: null,
-			showLoader: true,
-			loadingMoreMessages: false,
-			scrollIcon: false,
-			scrollMessagesCount: 0,
-			newMessages: [],
-			messageSelectionEnabled: false,
-			selectedMessages: [],
-			droppedFiles: []
-		}
-	},
-
-	computed: {
-		room() {
-			return this.rooms.find(room => room.roomId === this.roomId) || {}
-		},
-		showNoMessages() {
-			return (
-				this.roomId &&
-				!this.messages.length &&
-				!this.loadingMessages &&
-				!this.loadingRooms
-			)
-		},
-		showNoRoom() {
-			const noRoomSelected =
-				(!this.rooms.length && !this.loadingRooms) ||
-				(!this.roomId && !this.loadFirstRoom)
-
-			if (noRoomSelected) {
-				this.updateLoadingMessages(false)
-			}
-			return noRoomSelected
-		},
-		showMessagesStarted() {
-			return this.messages.length && this.messagesLoaded && this.showMessagesStartedText
-		}
-	},
-
-	watch: {
-		roomId: {
-			immediate: true,
-			handler() {
-				this.onRoomChanged()
-			}
-		},
-		messages: {
-			deep: true,
-			handler(newVal, oldVal) {
-				newVal.forEach((message, i) => {
-					if (
-						this.showNewMessagesDivider &&
-						!message.seen &&
-						message.senderId !== this.currentUserId
-					) {
-						this.newMessages.push({
-							_id: message._id,
-							index: i
-						})
-					}
-				})
-				if (oldVal?.length === newVal?.length - 1) {
-					this.newMessages = []
-				}
-				setTimeout(() => (this.loadingMoreMessages = false))
-			}
-		},
-		messagesLoaded(val) {
-			if (val) this.updateLoadingMessages(false)
-		}
-	},
-
-	mounted() {
-		this.newMessages = []
-	},
-
-	methods: {
-		updateLoadingMessages(val) {
-			this.loadingMessages = val
-
-			if (!val) {
-				setTimeout(() => this.initIntersectionObserver())
-			}
-		},
-		initIntersectionObserver() {
-			if (this.observer) {
-				this.showLoader = true
-				this.observer.disconnect()
-			}
-
-			const loader = this.$el.querySelector('#infinite-loader-messages')
-
-			if (loader) {
-				const options = {
-					root: this.$el.querySelector('#messages-list'),
-					rootMargin: `${this.scrollDistance}px`,
-					threshold: 0
-				}
-
-				this.observer = new IntersectionObserver(entries => {
-					if (entries[0].isIntersecting) {
-						this.loadMoreMessages()
-					}
-				}, options)
-
-				this.observer.observe(loader)
-			}
-		},
-		preventTopScroll() {
-			const container = this.$refs.scrollContainer
-			const prevScrollHeight = container.scrollHeight
-
-			const observer = new ResizeObserver(_ => {
-				if (container.scrollHeight !== prevScrollHeight) {
-					if (this.$refs.scrollContainer) {
-						this.$refs.scrollContainer.scrollTo({
-							top: container.scrollHeight - prevScrollHeight
-						})
-						observer.disconnect()
-					}
-				}
-			})
-
-			for (var i = 0; i < container.children.length; i++) {
-				observer.observe(container.children[i])
-			}
-		},
-		touchStart(touchEvent) {
-			if (this.singleRoom) return
-
-			if (touchEvent.changedTouches.length === 1) {
-				const posXStart = touchEvent.changedTouches[0].clientX
-				const posYStart = touchEvent.changedTouches[0].clientY
-
-				addEventListener(
-					'touchend',
-					touchEvent => this.touchEnd(touchEvent, posXStart, posYStart),
-					{ once: true }
-				)
-			}
-		},
-		touchEnd(touchEvent, posXStart, posYStart) {
-			if (touchEvent.changedTouches.length === 1) {
-				const posXEnd = touchEvent.changedTouches[0].clientX
-				const posYEnd = touchEvent.changedTouches[0].clientY
-
-				const swippedRight = posXEnd - posXStart > 100
-				const swippedVertically = Math.abs(posYEnd - posYStart) > 50
-
-				if (swippedRight && !swippedVertically) {
-					this.$emit('toggle-rooms-list')
-				}
-			}
-		},
-		onRoomChanged() {
-			this.updateLoadingMessages(true)
-			this.scrollIcon = false
-			this.scrollMessagesCount = 0
-			this.resetMessageSelection()
-
-			const unwatch = this.$watch(
-				() => this.messages,
-				val => {
-					if (!val || !val.length) return
-
-					const element = this.$refs.scrollContainer
-					if (!element) return
-
-					unwatch()
-
-					setTimeout(() => {
-						element.scrollTo({ top: element.scrollHeight })
-						this.updateLoadingMessages(false)
-					})
-				}
-			)
-		},
-		resetMessageSelection() {
-			this.messageSelectionEnabled = false
-			this.selectedMessages = []
-		},
-		selectMessage(message) {
-			this.selectedMessages.push(message)
-		},
-		unselectMessage(messageId) {
-			this.selectedMessages = this.selectedMessages.filter(
-				message => message._id !== messageId
-			)
-		},
-		onMessageAdded({ message, index, ref }) {
-			if (index !== this.messages.length - 1) return
-
-			const autoScrollOffset = ref.offsetHeight + 60
-
-			setTimeout(() => {
-				const scrollContainer = this.$refs.scrollContainer
-				let scrolledUp = false
-
-				if (scrollContainer) {
-					scrolledUp = this.getBottomScroll(scrollContainer) > autoScrollOffset
-				}
-
-				if (message.senderId === this.currentUserId) {
-					if (scrolledUp) {
-						if (this.autoScroll.send.newAfterScrollUp) {
-							this.scrollToBottom()
-						}
-					} else {
-						if (this.autoScroll.send.new) {
-							this.scrollToBottom()
-						}
-					}
-				} else {
-					if (scrolledUp) {
-						if (this.autoScroll.receive.newAfterScrollUp) {
-							this.scrollToBottom()
-						} else {
-							this.scrollIcon = true
-							this.scrollMessagesCount++
-						}
-					} else {
-						if (this.autoScroll.receive.new) {
-							this.scrollToBottom()
-						} else {
-							this.scrollIcon = true
-							this.scrollMessagesCount++
-						}
-					}
-				}
-			})
-		},
-		onContainerScroll(e) {
-			if (!e.target) return
-
-			const bottomScroll = this.getBottomScroll(e.target)
-			if (bottomScroll < 60) this.scrollMessagesCount = 0
-			this.scrollIcon = bottomScroll > 500 || this.scrollMessagesCount
-		},
-		loadMoreMessages() {
-			if (this.loadingMessages) return
-
-			setTimeout(
-				() => {
-					if (this.loadingMoreMessages) return
-
-					if (this.messagesLoaded || !this.roomId) {
-						this.loadingMoreMessages = false
-						this.showLoader = false
-						return
-					}
-
-					this.preventTopScroll()
-					this.$emit('fetch-messages')
-					this.loadingMoreMessages = true
-				},
-				// prevent scroll bouncing speed
-				500
-			)
-		},
-		messageActionHandler({ action, message }) {
-			switch (action.name) {
-				case 'replyMessage':
-					this.initReplyMessage = message
-					setTimeout(() => {
-						this.initReplyMessage = null
-					})
-					return
-				case 'editMessage':
-					this.initEditMessage = message
-					setTimeout(() => {
-						this.initEditMessage = null
-					})
-					return
-				case 'deleteMessage':
-					return this.$emit('delete-message', message)
-				case 'selectMessages':
-					this.selectedMessages = [message]
-					this.messageSelectionEnabled = true
-					return
-				default:
-					return this.$emit('message-action-handler', { action, message })
-			}
-		},
-		messageSelectionActionHandler(action) {
-			this.$emit('message-selection-action-handler', {
-				action,
-				messages: this.selectedMessages
-			})
-			this.resetMessageSelection()
-		},
-		sendMessageReaction(messageReaction) {
-			this.$emit('send-message-reaction', messageReaction)
-		},
-		getBottomScroll(element) {
-			const { scrollHeight, clientHeight, scrollTop } = element
-			return scrollHeight - clientHeight - scrollTop
-		},
-		scrollToBottom() {
-			setTimeout(() => {
-				const element = this.$refs.scrollContainer
-				if (element) {
-					element.classList.add('vac-scroll-smooth')
-					element.scrollTo({ top: element.scrollHeight, behavior: 'smooth' })
-					setTimeout(() => element.classList.remove('vac-scroll-smooth'))
-				}
-			}, 50)
-		},
-		openFile({ message, file }) {
-			this.$emit('open-file', { message, file })
-		},
-		openUserTag(user) {
-			this.$emit('open-user-tag', user)
-		},
-		onDropFiles(event) {
-			if (this.showFiles) {
-				this.droppedFiles = event.dataTransfer.files
-			}
-		}
-	}
-}
-</script>

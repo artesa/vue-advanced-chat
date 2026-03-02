@@ -1,7 +1,62 @@
+<script setup lang="ts">
+import type {
+	LinkOptions,
+	Message,
+	MessageFile as MessageFileType,
+	MessageOpenFileEvent,
+	OpenFileAction,
+	RoomUser,
+	TextFormatting
+} from '@/types'
+
+import { computed } from 'vue'
+import FormatMessage from '@/components/FormatMessage/FormatMessage.vue'
+import ProgressBar from '@/components/ProgressBar/ProgressBar.vue'
+
+import SvgIcon from '@/components/SvgIcon/SvgIcon.vue'
+
+import { isImageVideoFile } from '@/utils/media-file'
+
+import MessageFile from './MessageFile/MessageFile.vue'
+
+const props = defineProps<{
+	currentUserId: string | number
+	message: Message
+	roomUsers: RoomUser[]
+	textFormatting: TextFormatting
+	linkOptions: LinkOptions
+	messageSelectionEnabled: boolean
+}>()
+
+const emit = defineEmits<{
+	'open-file': [payload: MessageOpenFileEvent]
+	'open-user-tag': [user: RoomUser | undefined]
+}>()
+
+const imageVideoFiles = computed(() => {
+	return props.message.files!.filter(file => isImageVideoFile(file))
+})
+
+const otherFiles = computed(() => {
+	return props.message.files!.filter(file => !isImageVideoFile(file))
+})
+
+function openFile(
+	event: Event,
+	file: MessageFileType,
+	action: OpenFileAction
+): void {
+	if (!props.messageSelectionEnabled) {
+		event.stopPropagation()
+		emit('open-file', { file, action })
+	}
+}
+</script>
+
 <template>
 	<div class="vac-message-files-container">
-		<div v-for="(file, i) in imageVideoFiles" :key="i + 'iv'">
-			<message-file
+		<div v-for="(file, i) in imageVideoFiles" :key="`${i}iv`">
+			<MessageFile
 				:file="file"
 				:current-user-id="currentUserId"
 				:message="message"
@@ -12,27 +67,30 @@
 				<template v-for="(idx, name) in $slots" #[name]="data">
 					<slot :name="name" v-bind="data" />
 				</template>
-			</message-file>
+			</MessageFile>
 		</div>
 
 		<div
 			v-for="(file, i) in otherFiles"
-			:key="i + 'a'"
+			:key="`${i}a`"
 			class="vac-file-wrapper"
 		>
-			<progress-bar
-				v-if="file.progress >= 0"
+			<ProgressBar
+				v-if="file.progress != null && file.progress >= 0"
 				:progress="file.progress"
 				:style="{ top: '44px' }"
 			/>
 			<div
 				class="vac-file-container"
-				:class="{ 'vac-file-container-progress': file.progress >= 0 }"
+				:class="{
+					'vac-file-container-progress':
+						file.progress != null && file.progress >= 0
+				}"
 				@click="openFile($event, file, 'download')"
 			>
 				<div class="vac-svg-button">
 					<slot name="document-icon">
-						<svg-icon name="document" />
+						<SvgIcon name="document" />
 					</slot>
 				</div>
 				<div class="vac-text-ellipsis">
@@ -44,9 +102,9 @@
 			</div>
 		</div>
 
-		<format-message
+		<FormatMessage
 			:message-id="message._id"
-			:content="message.content"
+			:content="message.content ?? ''"
 			:users="roomUsers"
 			:text-formatting="textFormatting"
 			:link-options="linkOptions"
@@ -54,47 +112,3 @@
 		/>
 	</div>
 </template>
-
-<script>
-import SvgIcon from '../../../../components/SvgIcon/SvgIcon'
-import FormatMessage from '../../../../components/FormatMessage/FormatMessage'
-import ProgressBar from '../../../../components/ProgressBar/ProgressBar'
-
-import MessageFile from './MessageFile/MessageFile'
-
-import { isImageVideoFile } from '../../../../utils/media-file'
-
-export default {
-	name: 'MessageFiles',
-	components: { SvgIcon, FormatMessage, ProgressBar, MessageFile },
-
-	props: {
-		currentUserId: { type: [String, Number], required: true },
-		message: { type: Object, required: true },
-		roomUsers: { type: Array, required: true },
-		textFormatting: { type: Object, required: true },
-		linkOptions: { type: Object, required: true },
-		messageSelectionEnabled: { type: Boolean, required: true }
-	},
-
-	emits: ['open-file', 'open-user-tag'],
-
-	computed: {
-		imageVideoFiles() {
-			return this.message.files.filter(file => isImageVideoFile(file))
-		},
-		otherFiles() {
-			return this.message.files.filter(file => !isImageVideoFile(file))
-		}
-	},
-
-	methods: {
-		openFile(event, file, action) {
-			if (!this.messageSelectionEnabled) {
-				event.stopPropagation()
-				this.$emit('open-file', { file, action })
-			}
-		}
-	}
-}
-</script>

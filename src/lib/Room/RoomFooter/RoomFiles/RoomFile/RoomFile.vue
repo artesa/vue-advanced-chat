@@ -1,17 +1,40 @@
+<script setup lang="ts">
+import type { MessageFile } from '@/types'
+
+import { computed } from 'vue'
+import Loader from '../../../../../components/Loader/Loader.vue'
+
+import SvgIcon from '../../../../../components/SvgIcon/SvgIcon.vue'
+
+import { isImageFile, isVideoFile } from '../../../../../utils/media-file'
+
+const props = defineProps<{
+	file: MessageFile & { loading?: boolean }
+	index: number
+}>()
+
+defineEmits<{
+	'remove-file': [index: number]
+}>()
+
+const isImage = computed(() => isImageFile(props.file))
+const isVideo = computed(() => isVideoFile(props.file))
+</script>
+
 <template>
 	<div class="vac-room-file-container">
-		<loader :show="file.loading" type="room-file">
+		<Loader :show="file.loading" type="room-file">
 			<template v-for="(idx, name) in $slots" #[name]="data">
 				<slot :name="name" v-bind="data" />
 			</template>
-		</loader>
+		</Loader>
 
 		<div
 			class="vac-svg-button vac-icon-remove"
 			@click="$emit('remove-file', index)"
 		>
 			<slot name="image-close-icon">
-				<svg-icon name="close" param="image" />
+				<SvgIcon name="close" param="image" />
 			</slot>
 		</div>
 
@@ -20,7 +43,7 @@
 			class="vac-message-image"
 			:class="{ 'vac-blur-loading': file.loading }"
 			:style="{
-				'background-image': `url('${file.localUrl || file.url}')`
+				'background-image': `url('${file.localUrl || file.url}')`,
 			}"
 		/>
 
@@ -29,7 +52,7 @@
 			controls
 			:class="{ 'vac-blur-loading': file.loading }"
 		>
-			<source :src="file.localUrl || file.url" />
+			<source :src="file.localUrl || file.url">
 		</video>
 
 		<div
@@ -39,7 +62,7 @@
 		>
 			<div>
 				<slot name="file-icon">
-					<svg-icon name="file" />
+					<SvgIcon name="file" />
 				</slot>
 			</div>
 			<div class="vac-text-ellipsis">
@@ -51,34 +74,3 @@
 		</div>
 	</div>
 </template>
-
-<script>
-import Loader from '../../../../../components/Loader/Loader'
-import SvgIcon from '../../../../../components/SvgIcon/SvgIcon'
-
-import { isImageFile, isVideoFile } from '../../../../../utils/media-file'
-
-export default {
-	name: 'RoomFiles',
-	components: {
-		Loader,
-		SvgIcon
-	},
-
-	props: {
-		file: { type: Object, required: true },
-		index: { type: Number, required: true }
-	},
-
-	emits: ['remove-file'],
-
-	computed: {
-		isImage() {
-			return isImageFile(this.file)
-		},
-		isVideo() {
-			return isVideoFile(this.file)
-		}
-	}
-}
-</script>

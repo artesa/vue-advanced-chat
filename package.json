@@ -7,7 +7,7 @@
 		"email": "antoindupontdev@gmail.com",
 		"name": "Antoine Dupont"
 	},
-	"types": "./types/vue-advanced-chat.common.d.ts",
+	"types": "./dist/index.d.ts",
 	"keywords": [
 		"vue",
 		"vuejs",
@@ -26,53 +26,62 @@
 		"url": "https://github.com/artesa/vue-advanced-chat/issues"
 	},
 	"homepage": "https://github.com/artesa/vue-advanced-chat#readme",
-	"main": "./dist/vue-advanced-chat.umd.js",
-	"module": "./dist/vue-advanced-chat.mjs",
-	"unpkg": "./dist/vue-advanced-chat.umd.js",
-	"jsdelivr": "./dist/vue-advanced-chat.umd.js",
+	"type": "module",
+	"main": "./dist/vue-advanced-chat.js",
+	"module": "./dist/vue-advanced-chat.js",
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"import": "./dist/vue-advanced-chat.js"
+		},
+		"./ce": {
+			"types": "./dist/ce/index.ce.d.ts",
+			"import": "./dist/ce/vue-advanced-chat.js"
+		},
+		"./style.css": "./dist/style.css"
+	},
 	"packageManager": "pnpm@9.15.9",
 	"scripts": {
 		"dev": "vite",
-		"build": "vite build",
+		"build": "vite build && vite build --config vite.config.ce.js",
 		"serve": "vite preview",
-		"clean:lib": "rm -rf dist/*.js && rm -rf dist/*.map && rm -rf dist/*.css && rm -rf dist/*.html",
+		"clean:lib": "rm -rf dist/*.js && rm -rf dist/*.map && rm -rf dist/*.css && rm -rf dist/*.html && rm -rf dist/ce",
 		"prepublish": "npm run lint && npm run build",
 		"version": "npm run build",
-		"lint": "eslint --ext .js,.vue --ignore-path .gitignore --fix src",
+		"typecheck": "vue-tsc --noEmit",
+		"lint": "eslint",
 		"reset": "rm -rf node_modules && rm -rf package-lock.json && npm i",
 		"reset-all": "cd demo && npm run reset-all",
-		"pull-master": "git pull origin master --no-edit --no-ff"
+		"pull-master": "git pull origin master --no-edit --no-ff",
+		"test": "vitest run",
+		"test:update": "vitest run --update"
 	},
-	"typings": "types/index.d.ts",
 	"files": [
-		"dist/*",
-		"types/*"
+		"dist/*"
 	],
 	"devDependencies": {
-		"@babel/core": "7.12.16",
-		"@semantic-release/changelog": "^6.0.3",
-		"@semantic-release/git": "^10.0.1",
-		"@semantic-release/github": "^9.2.1",
-		"@typescript-eslint/eslint-plugin": "5.4.0",
-		"@typescript-eslint/parser": "5.4.0",
-		"@vitejs/plugin-vue": "1.10.2",
-		"@vue/compiler-sfc": "3.2.22",
-		"@vue/eslint-config-standard": "4.0.0",
-		"@vue/eslint-config-typescript": "9.1.0",
-		"babel-eslint": "10.0.3",
-		"eslint": "7.32.0",
-		"eslint-plugin-vue": "8.0.3",
-		"sass": "1.85.1",
-		"semantic-release": "^22.0.5",
-		"typescript": "5.8.x",
-		"vite": "6.2.0",
-		"vue": "3.5.13",
-		"vue-loader": "^17.4.2"
+		"@antfu/eslint-config": "^4.13.2",
+		"@vitejs/plugin-vue": "6.0.4",
+		"@vitest/browser": "^4.0.18",
+		"@vitest/browser-playwright": "^4.0.18",
+		"eslint": "^9.22.0",
+		"playwright": "^1.58.2",
+		"sass": "1.97.3",
+		"typescript": "5.9.3",
+		"vite": "^7.3.1",
+		"vite-plugin-dts": "^4.5.4",
+		"vitest": "^4.0.18",
+		"vitest-browser-vue": "^2.0.2",
+		"vue": "^3.5.29",
+		"vue-tsc": "^3.2.5"
+	},
+	"peerDependencies": {
+		"vue": "^3.5.0"
 	},
 	"dependencies": {
-		"@vueuse/components": "^12.8.2",
-		"@vueuse/core": "^12.8.2",
-		"emoji-picker-element": "1.12.1",
+		"@vueuse/components": "^14.2.1",
+		"@vueuse/core": "^14.2.1",
+		"emoji-picker-element": "1.29.1",
 		"micromark": "^3.1.0",
 		"micromark-extension-gfm": "^2.0.1"
 	}

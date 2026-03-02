@@ -1,13 +1,32 @@
+<script setup lang="ts">
+import { computed } from 'vue'
+
+const props = withDefaults(defineProps<{
+	progress?: number
+}>(), {
+	progress: 0,
+})
+
+const radius = 35
+const stroke = 4
+const normalizedRadius = radius - stroke * 2
+const circumference = normalizedRadius * 2 * Math.PI
+
+const strokeDashoffset = computed(() => {
+	return circumference - (props.progress / 100) * circumference
+})
+</script>
+
 <template>
 	<transition name="vac-fade-spinner" appear>
 		<div ref="progress" class="vac-progress-wrapper">
 			<svg :height="radius * 2" :width="radius * 2">
 				<circle
 					stroke="rgba(255, 255, 255, 0.7)"
-					:stroke-dasharray="circumference + ' ' + circumference"
+					:stroke-dasharray="`${circumference} ${circumference}`"
 					:style="{
-						strokeDashoffset: strokeDashoffset,
-						strokeLinecap: 'round'
+						strokeDashoffset,
+						strokeLinecap: 'round',
 					}"
 					:stroke-width="stroke"
 					fill="transparent"
@@ -19,8 +38,8 @@
 			<div
 				class="vac-progress-content"
 				:style="{
-					height: radius * 2 - 19 + 'px',
-					width: radius * 2 - 19 + 'px'
+					height: `${radius * 2 - 19}px`,
+					width: `${radius * 2 - 19}px`,
 				}"
 			>
 				<div class="vac-progress-text">
@@ -30,32 +49,3 @@
 		</div>
 	</transition>
 </template>
-
-<script>
-export default {
-	name: 'ProgressBar',
-
-	props: {
-		progress: { type: Number, default: 0 }
-	},
-
-	data() {
-		const radius = 35
-		const stroke = 4
-		const normalizedRadius = radius - stroke * 2
-		const circumference = normalizedRadius * 2 * Math.PI
-
-		return {
-			radius,
-			stroke,
-			normalizedRadius,
-			circumference
-		}
-	},
-	computed: {
-		strokeDashoffset() {
-			return this.circumference - (this.progress / 100) * this.circumference
-		}
-	}
-}
-</script>

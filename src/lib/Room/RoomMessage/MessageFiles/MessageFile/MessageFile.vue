@@ -1,15 +1,90 @@
+<script setup lang="ts">
+import type { Message, MessageFile, StringNumber } from '@/types'
+
+import { computed, onMounted, ref, useTemplateRef, watch } from 'vue'
+
+import Loader from '@/components/Loader/Loader.vue'
+import ProgressBar from '@/components/ProgressBar/ProgressBar.vue'
+import SvgIcon from '@/components/SvgIcon/SvgIcon.vue'
+
+import { isImageFile, isVideoFile } from '@/utils/media-file'
+
+const props = defineProps<{
+	currentUserId: StringNumber
+	message: Message
+	file: MessageFile
+	index: number
+	messageSelectionEnabled: boolean
+}>()
+
+const emit = defineEmits<{
+	'open-file': [{ file: MessageFile, action: string }]
+}>()
+
+const imageResponsive = ref({ maxHeight: 0, loaderTop: 0 })
+const imageLoading = ref(false)
+const imageHover = ref(false)
+
+const imageRef = useTemplateRef('imageRef')
+
+const isImageLoading = computed(() => {
+	return props.file.url.indexOf('blob:http') !== -1 || imageLoading.value
+})
+
+const isImage = computed(() => {
+	return isImageFile(props.file)
+})
+
+const isVideo = computed(() => {
+	return isVideoFile(props.file)
+})
+
+watch(
+	() => props.file,
+	() => {
+		checkImgLoad()
+	},
+	{ immediate: true },
+)
+
+onMounted(() => {
+	if (imageRef.value) {
+		imageResponsive.value = {
+			maxHeight: imageRef.value.clientWidth - 18,
+			loaderTop: imageRef.value.clientHeight / 2 - 9,
+		}
+	}
+})
+
+function checkImgLoad() {
+	if (!isImageFile(props.file))
+    return
+	imageLoading.value = true
+	const image = new Image()
+	image.src = props.file.url
+	image.addEventListener('load', () => (imageLoading.value = false))
+}
+
+function openFile(event: Event, action: string) {
+	if (!props.messageSelectionEnabled) {
+		event.stopPropagation()
+		emit('open-file', { file: props.file, action })
+	}
+}
+</script>
+
 <template>
 	<div class="vac-message-file-container">
 		<div
 			v-if="isImage"
-			:ref="'imageRef' + index"
+			ref="imageRef"
 			class="vac-message-image-container"
 			@mouseover="imageHover = true"
 			@mouseleave="imageHover = false"
 			@click="openFile($event, 'preview')"
 		>
 			<progress-bar
-				v-if="file.progress >= 0"
+				v-if="file.progress != null && file.progress >= 0"
 				:progress="file.progress"
 				:style="{ top: `${imageResponsive.loaderTop}px` }"
 			/>
@@ -18,7 +93,6 @@
 				:show="isImageLoading"
 				type="message-file"
 				:message-id="message._id"
-				:style="{ top: `${imageResponsive.loaderTop}px` }"
 			>
 				<template v-for="(idx, name) in $slots" #[name]="data">
 					<slot :name="name" v-bind="data" />
@@ -28,13 +102,13 @@
 				class="vac-message-image"
 				:class="{
 					'vac-blur-loading':
-						isImageLoading && message.senderId === currentUserId
+						isImageLoading && message.senderId === currentUserId,
 				}"
 				:style="{
 					'background-image': `url('${
 						isImageLoading ? file.preview || file.url : file.url
 					}')`,
-					'max-height': `${imageResponsive.maxHeight}px`
+					'max-height': `${imageResponsive.maxHeight}px`,
 				}"
 			>
 				<transition name="vac-fade-image">
@@ -68,89 +142,10 @@
 			class="vac-video-container"
 			@click.prevent="openFile($event, 'preview')"
 		>
-			<progress-bar v-if="file.progress >= 0" :progress="file.progress" />
+			<progress-bar v-if="file.progress != null && file.progress >= 0" :progress="file.progress" />
 			<video controls>
 				<source :src="file.url" />
 			</video>
 		</div>
 	</div>
 </template>
-
-<script>
-import Loader from '../../../../../components/Loader/Loader'
-import ProgressBar from '../../../../../components/ProgressBar/ProgressBar'
-import SvgIcon from '../../../../../components/SvgIcon/SvgIcon'
-
-import { isImageFile, isVideoFile } from '../../../../../utils/media-file'
-
-export default {
-	name: 'MessageFile',
-	components: { SvgIcon, Loader, ProgressBar },
-
-	props: {
-		currentUserId: { type: [String, Number], required: true },
-		message: { type: Object, required: true },
-		file: { type: Object, required: true },
-		index: { type: Number, required: true },
-		messageSelectionEnabled: { type: Boolean, required: true }
-	},
-
-	emits: ['open-file'],
-
-	data() {
-		return {
-			imageResponsive: '',
-			imageLoading: false,
-			imageHover: false
-		}
-	},
-
-	computed: {
-		isImageLoading() {
-			return this.file.url.indexOf('blob:http') !== -1 || this.imageLoading
-		},
-		isImage() {
-			return isImageFile(this.file)
-		},
-		isVideo() {
-			return isVideoFile(this.file)
-		}
-	},
-
-	watch: {
-		file: {
-			immediate: true,
-			handler() {
-				this.checkImgLoad()
-			}
-		}
-	},
-
-	mounted() {
-		const ref = this.$refs['imageRef' + this.index]
-
-		if (ref) {
-			this.imageResponsive = {
-				maxHeight: ref.clientWidth - 18,
-				loaderTop: ref.clientHeight / 2 - 9
-			}
-		}
-	},
-
-	methods: {
-		checkImgLoad() {
-			if (!isImageFile(this.file)) return
-			this.imageLoading = true
-			const image = new Image()
-			image.src = this.file.url
-			image.addEventListener('load', () => (this.imageLoading = false))
-		},
-		openFile(event, action) {
-			if (!this.messageSelectionEnabled) {
-				event.stopPropagation()
-				this.$emit('open-file', { file: this.file, action })
-			}
-		}
-	}
-}
-</script>

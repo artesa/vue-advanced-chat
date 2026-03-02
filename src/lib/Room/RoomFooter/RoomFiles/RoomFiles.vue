@@ -1,3 +1,20 @@
+<script setup lang="ts">
+import type { MessageFile } from '@/types'
+
+import SvgIcon from '../../../../components/SvgIcon/SvgIcon.vue'
+
+import RoomFile from './RoomFile/RoomFile.vue'
+
+defineProps<{
+	files: MessageFile[]
+}>()
+
+defineEmits<{
+	'remove-file': [index: number]
+	'reset-message': []
+}>()
+</script>
+
 <template>
 	<transition name="vac-slide-up">
 		<div
@@ -6,7 +23,7 @@
 		>
 			<div class="vac-files-box">
 				<div v-for="(file, i) in files" :key="i">
-					<room-file
+					<RoomFile
 						:file="file"
 						:index="i"
 						@remove-file="$emit('remove-file', $event)"
@@ -14,40 +31,17 @@
 						<template v-for="(idx, name) in $slots" #[name]="data">
 							<slot :name="name" v-bind="data" />
 						</template>
-					</room-file>
+					</RoomFile>
 				</div>
 			</div>
 
 			<div class="vac-icon-close">
 				<div class="vac-svg-button" @click="$emit('reset-message')">
 					<slot name="files-close-icon">
-						<svg-icon name="close-outline" />
+						<SvgIcon name="close-outline" />
 					</slot>
 				</div>
 			</div>
 		</div>
 	</transition>
 </template>
-
-<script>
-import SvgIcon from '../../../../components/SvgIcon/SvgIcon'
-
-import RoomFile from './RoomFile/RoomFile'
-
-export default {
-	name: 'RoomFiles',
-	components: {
-		SvgIcon,
-		RoomFile
-	},
-
-	props: {
-		files: { type: Array, required: true }
-	},
-
-	emits: ['remove-file', 'reset-message'],
-
-	computed: {
-	}
-}
-</script>

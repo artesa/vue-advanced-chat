@@ -20,7 +20,7 @@ const showEmojis = true
 const showReactionEmojis = true
 const showNewMessagesDivider = true
 const showFooter = true
-const textMessages = { ROOMS_EMPTY: 'No rooms' }
+const i18n = { roomsEmpty: 'No rooms' }
 const textFormatting = {
 	disabled: false,
 	italic: '_',
@@ -62,7 +62,7 @@ export default {
 	showReactionEmojis,
 	showNewMessagesDivider,
 	showFooter,
-	textMessages,
+	i18n,
 	textFormatting,
 	responsiveBreakpoint,
 	singleRoom,

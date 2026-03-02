@@ -1,15 +1,120 @@
+<script setup lang="ts">
+import { computed, onMounted, ref, useTemplateRef } from 'vue'
+
+import SvgIcon from '../../../../components/SvgIcon/SvgIcon.vue'
+
+import AudioControl from './AudioControl/AudioControl.vue'
+
+const props = withDefaults(defineProps<{
+	messageId?: string | number | null
+	src?: string | null
+	messageSelectionEnabled: boolean
+}>(), {
+	messageId: null,
+	src: null,
+})
+
+const emit = defineEmits<{
+	'hover-audio-progress': [event: unknown]
+	'update-progress-time': [time: string]
+}>()
+
+function convertTimeMMSS(seconds: number) {
+	return new Date(seconds * 1000).toISOString().substr(14, 5)
+}
+
+const isPlaying = ref(false)
+const duration = ref(convertTimeMMSS(0))
+const playedTime = ref(convertTimeMMSS(0))
+const progress = ref(0)
+
+let player: HTMLAudioElement | null = null
+
+const rootEl = useTemplateRef<HTMLElement>('rootEl')
+
+const playerUniqId = computed(() => `audio-player${props.messageId}`)
+
+const audioSource = computed(() => {
+	if (props.src)
+		return props.src
+	resetProgress()
+	return undefined
+})
+
+onMounted(() => {
+	player = rootEl.value?.querySelector<HTMLAudioElement>(`#${playerUniqId.value}`) ?? null
+
+	if (!player)
+		return
+
+	player.addEventListener('ended', () => {
+		isPlaying.value = false
+	})
+
+	player.addEventListener('loadeddata', () => {
+		resetProgress()
+		duration.value = convertTimeMMSS(player!.duration)
+		updateProgressTime()
+	})
+
+	player.addEventListener('timeupdate', onTimeUpdate)
+})
+
+function playback() {
+	if (props.messageSelectionEnabled || !audioSource.value)
+		return
+
+	if (isPlaying.value)
+		player?.pause()
+	else setTimeout(() => player?.play())
+
+	isPlaying.value = !isPlaying.value
+}
+
+function resetProgress() {
+	if (isPlaying.value)
+		player?.pause()
+
+	duration.value = convertTimeMMSS(0)
+	playedTime.value = convertTimeMMSS(0)
+	progress.value = 0
+	isPlaying.value = false
+	updateProgressTime()
+}
+
+function onTimeUpdate() {
+	if (!player)
+		return
+	playedTime.value = convertTimeMMSS(player.currentTime)
+	progress.value = (player.currentTime / player.duration) * 100
+	updateProgressTime()
+}
+
+function onUpdateProgress(pos: number) {
+	if (pos && player)
+		player.currentTime = pos * player.duration
+}
+
+function updateProgressTime() {
+	emit(
+		'update-progress-time',
+		progress.value > 1 ? playedTime.value : duration.value,
+	)
+}
+</script>
+
 <template>
-	<div>
+	<div ref="rootEl">
 		<div class="vac-audio-player">
 			<div class="vac-svg-button" @click="playback">
-				<slot v-if="isPlaying" :name="'audio-pause-icon_' + messageId">
-					<svg-icon name="audio-pause" />
+				<slot v-if="isPlaying" :name="`audio-pause-icon_${messageId}`">
+					<SvgIcon name="audio-pause" />
 				</slot>
-				<slot v-else :name="'audio-play-icon_' + messageId">
-					<svg-icon name="audio-play" />
+				<slot v-else :name="`audio-play-icon_${messageId}`">
+					<SvgIcon name="audio-play" />
 				</slot>
 			</div>
-			<audio-control
+			<AudioControl
 				:percentage="progress"
 				:message-selection-enabled="messageSelectionEnabled"
 				@change-linehead="onUpdateProgress"
@@ -20,98 +125,3 @@
 		</div>
 	</div>
 </template>
-
-<script>
-import SvgIcon from '../../../../components/SvgIcon/SvgIcon'
-
-import AudioControl from './AudioControl/AudioControl'
-
-export default {
-	name: 'AudioPlayer',
-	components: {
-		SvgIcon,
-		AudioControl
-	},
-
-	props: {
-		messageId: { type: [String, Number], default: null },
-		src: { type: String, default: null },
-		messageSelectionEnabled: { type: Boolean, required: true }
-	},
-
-	emits: ['hover-audio-progress', 'update-progress-time'],
-
-	data() {
-		return {
-			isPlaying: false,
-			duration: this.convertTimeMMSS(0),
-			playedTime: this.convertTimeMMSS(0),
-			progress: 0
-		}
-	},
-
-	computed: {
-		playerUniqId() {
-			return `audio-player${this.messageId}`
-		},
-		audioSource() {
-			if (this.src) return this.src
-			this.resetProgress()
-			return null
-		}
-	},
-
-	mounted() {
-		this.player = this.$el.querySelector('#' + this.playerUniqId)
-
-		this.player.addEventListener('ended', () => {
-			this.isPlaying = false
-		})
-
-		this.player.addEventListener('loadeddata', () => {
-			this.resetProgress()
-			this.duration = this.convertTimeMMSS(this.player.duration)
-			this.updateProgressTime()
-		})
-
-		this.player.addEventListener('timeupdate', this.onTimeUpdate)
-	},
-
-	methods: {
-		convertTimeMMSS(seconds) {
-			return new Date(seconds * 1000).toISOString().substr(14, 5)
-		},
-		playback() {
-			if (this.messageSelectionEnabled || !this.audioSource) return
-
-			if (this.isPlaying) this.player.pause()
-			else setTimeout(() => this.player.play())
-
-			this.isPlaying = !this.isPlaying
-		},
-		resetProgress() {
-			if (this.isPlaying) this.player.pause()
-
-			this.duration = this.convertTimeMMSS(0)
-			this.playedTime = this.convertTimeMMSS(0)
-			this.progress = 0
-			this.isPlaying = false
-			this.updateProgressTime()
-		},
-		onTimeUpdate() {
-			this.playedTime = this.convertTimeMMSS(this.player.currentTime)
-			this.progress = (this.player.currentTime / this.player.duration) * 100
-			this.updateProgressTime()
-		},
-		onUpdateProgress(pos) {
-			if (pos) this.player.currentTime = pos * this.player.duration
-		},
-		updateProgressTime() {
-			this.$emit(
-				'update-progress-time',
-				this.progress > 1 ? this.playedTime : this.duration
-			)
-		}
-	}
-}
-</script>

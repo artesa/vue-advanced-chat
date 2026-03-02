@@ -1,3 +1,138 @@
+<script setup lang="ts">
+import type {
+	LinkOptions,
+	RoomUser,
+	StringNumber,
+	TextFormatting,
+	I18n
+} from '@/types'
+
+import { computed } from 'vue'
+import SvgIcon from '@/components/SvgIcon/SvgIcon.vue'
+import { IMAGE_TYPES } from '@/utils/constants'
+import markdown from '@/utils/markdown'
+
+interface ParsedMessage {
+	types?: string[]
+	value: string
+	markdown?: boolean
+	tag?: boolean
+	url?: boolean
+	href?: string
+	image?: boolean
+	height?: string
+}
+
+const props = withDefaults(
+	defineProps<{
+		messageId?: string
+		roomId?: StringNumber
+		roomList?: boolean
+		content: string | number
+		deleted?: boolean
+		users?: RoomUser[]
+		linkify?: boolean
+		singleLine?: boolean
+		reply?: boolean
+		textFormatting: TextFormatting
+		i18n?: I18n
+		linkOptions: LinkOptions
+	}>(),
+	{
+		messageId: '',
+		roomId: '',
+		roomList: false,
+		deleted: false,
+		users: () => [],
+		linkify: true,
+		singleLine: false,
+		reply: false,
+    i18n: undefined,
+	}
+)
+
+const emit = defineEmits<{
+	'open-user-tag': [user: RoomUser | undefined]
+}>()
+
+function checkType(message: ParsedMessage, type: string): boolean {
+	return !!message.types && message.types.indexOf(type) !== -1
+}
+
+function checkImageType(message: ParsedMessage): boolean {
+	let index = message.value.lastIndexOf('.')
+	const slashIndex = message.value.lastIndexOf('/')
+	if (slashIndex > index) index = -1
+
+	const type = message.value.substring(index + 1, message.value.length)
+
+	const isMedia =
+		index > 0 && IMAGE_TYPES.some(t => type.toLowerCase().includes(t))
+
+	if (isMedia) setImageSize(message)
+
+	return isMedia
+}
+
+function setImageSize(message: ParsedMessage): void {
+	const image = new Image()
+	image.src = message.value
+
+	image.addEventListener('load', onLoad)
+
+	function onLoad(img: Event) {
+		const target = (img as any).path?.[0] ?? img.target
+		const ratio = target.width / 150
+		message.height = Math.round(target.height / ratio) + 'px'
+		image.removeEventListener('load', onLoad)
+	}
+}
+
+function openTag(event: MouseEvent): void {
+	const target = event.target as HTMLElement
+	const userId = target.getAttribute('data-user-id')
+	if (!props.singleLine && userId) {
+		const user = props.users.find(u => String(u._id) === userId)
+		emit('open-user-tag', user)
+	}
+}
+
+const parsedMessage = computed<ParsedMessage[]>(() => {
+	if (props.deleted) {
+		return [{ value: props.i18n?.messageDeleted as string }]
+	}
+
+	let options: { textFormatting?: Record<string, unknown> }
+	if (!props.textFormatting.disabled) {
+		options = {
+			textFormatting: {
+				linkify: props.linkify,
+				linkOptions: props.linkOptions,
+				singleLine: props.singleLine,
+				reply: props.reply,
+				users: props.users,
+				...props.textFormatting
+			}
+		}
+	} else {
+		options = {}
+	}
+
+	const message: ParsedMessage[] = markdown(
+		String(props.content ?? ''),
+		options
+	)
+
+	message.forEach(m => {
+		m.markdown = checkType(m, 'markdown')
+		m.tag = checkType(m, 'tag')
+		m.image = checkImageType(m)
+	})
+
+	return message
+})
+</script>
+
 <template>
 	<div
 		class="vac-format-message-wrapper"
@@ -39,7 +174,7 @@
 								:class="{ 'vac-icon-deleted-room': roomList }"
 							/>
 						</slot>
-						{{ textMessages.MESSAGE_DELETED }}
+						{{ i18n?.messageDeleted }}
 					</template>
 					<template v-else-if="message.url && message.image">
 						<div class="vac-image-link-container">
@@ -63,105 +198,3 @@
 		</template>
 	</div>
 </template>
-
-<script>
-import SvgIcon from '../SvgIcon/SvgIcon'
-
-import markdown from '../../utils/markdown'
-import { IMAGE_TYPES } from '../../utils/constants'
-
-export default {
-	name: 'FormatMessage',
-	components: { SvgIcon },
-
-	props: {
-		messageId: { type: String, default: '' },
-		roomId: { type: String, default: '' },
-		roomList: { type: Boolean, default: false },
-		content: { type: [String, Number], required: true },
-		deleted: { type: Boolean, default: false },
-		users: { type: Array, default: () => [] },
-		linkify: { type: Boolean, default: true },
-		singleLine: { type: Boolean, default: false },
-		reply: { type: Boolean, default: false },
-		textFormatting: { type: Object, required: true },
-		textMessages: { type: Object, default: () => {} },
-		linkOptions: { type: Object, required: true }
-	},
-
-	emits: ['open-user-tag'],
-
-	computed: {
-		parsedMessage() {
-			if (this.deleted) {
-				return [{ value: this.textMessages.MESSAGE_DELETED }]
-			}
-
-			let options
-			if (!this.textFormatting.disabled) {
-				options = {
-					textFormatting: {
-						linkify: this.linkify,
-						linkOptions: this.linkOptions,
-						singleLine: this.singleLine,
-						reply: this.reply,
-						users: this.users,
-						...this.textFormatting
-					}
-				}
-			} else {
-				options = {}
-			}
-
-			const message = markdown(this.content, options)
-
-			message.forEach(m => {
-				m.markdown = this.checkType(m, 'markdown')
-				m.tag = this.checkType(m, 'tag')
-				m.image = this.checkImageType(m)
-			})
-
-			return message
-		}
-	},
-
-	methods: {
-		checkType(message, type) {
-			return message.types && message.types.indexOf(type) !== -1
-		},
-		checkImageType(message) {
-			let index = message.value.lastIndexOf('.')
-			const slashIndex = message.value.lastIndexOf('/')
-			if (slashIndex > index) index = -1
-
-			const type = message.value.substring(index + 1, message.value.length)
-
-			const isMedia =
-				index > 0 && IMAGE_TYPES.some(t => type.toLowerCase().includes(t))
-
-			if (isMedia) this.setImageSize(message)
-
-			return isMedia
-		},
-		setImageSize(message) {
-			const image = new Image()
-			image.src = message.value
-
-			image.addEventListener('load', onLoad)
-
-			function onLoad(img) {
-				const ratio = img.path[0].width / 150
-				message.height = Math.round(img.path[0].height / ratio) + 'px'
-				image.removeEventListener('load', onLoad)
-			}
-		},
-		openTag(event) {
-			const userId = event.target.getAttribute('data-user-id')
-			if (!this.singleLine && userId) {
-				const user = this.users.find(u => String(u._id) === userId)
-				this.$emit('open-user-tag', user)
-			}
-		}
-	}
-}
-</script>

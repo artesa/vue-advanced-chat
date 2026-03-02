@@ -1,17 +1,53 @@
+<script setup lang="ts">
+import { computed, onMounted, ref, watch } from 'vue'
+import ChatContainer from './ChatContainer.vue'
+
+const theme = ref<'light' | 'dark'>('light')
+const showChat = ref(true)
+const users = [
+	{
+		_id: '6R0MijpK6M4AIrwaaCY2',
+		username: 'Luke',
+		avatar: 'https://66.media.tumblr.com/avatar_c6a8eae4303e_512.pnj',
+	},
+	{
+		_id: 'SGmFnBZB4xxMv9V4CVlW',
+		username: 'Leia',
+		avatar: 'https://media.glamour.com/photos/5695e9d716d0dc3747eea3ef/master/w_1600,c_limit/beauty-2015-12-princess-leia-1-main.jpg',
+	},
+	{
+		_id: '6jMsIXUrBHBj7o2cRlau',
+		username: 'Yoda',
+		avatar:
+			'https://vignette.wikia.nocookie.net/teamavatarone/images/4/45/Yoda.jpg/revision/latest?cb=20130224160049',
+	},
+]
+const currentUserId = ref('6R0MijpK6M4AIrwaaCY2')
+const isDevice = ref(false)
+const showDemoOptions = ref(true)
+
+const showOptions = computed(() => !isDevice.value || showDemoOptions.value)
+
+watch(currentUserId, () => {
+	showChat.value = false
+	setTimeout(() => (showChat.value = true), 150)
+})
+
+onMounted(() => {
+	isDevice.value = window.innerWidth < 500
+	window.addEventListener('resize', (ev) => {
+		if (ev.isTrusted)
+			isDevice.value = window.innerWidth < 500
+	})
+})
+</script>
+
 <template>
 	<div>
 		<div
 			class="app-container"
 			:class="{ 'app-mobile': isDevice, 'app-mobile-dark': theme === 'dark' }"
 		>
-			<!-- <div>
-				<button @click="resetData">
-					Clear Data
-				</button>
-				<button :disabled="updatingData" @click="addData">
-					Add Data
-				</button>
-			</div> -->
 			<span
 				v-if="showOptions"
 				class="user-logged"
@@ -34,150 +70,21 @@
 				</button>
 				<button class="button-github">
 					<a href="https://github.com/advanced-chat/vue-advanced-chat">
-						<img src="@/assets/github.svg" />
+						<img src="@/assets/github.svg">
 					</a>
 				</button>
 			</div>
 
-			<chat-container
+			<ChatContainer
 				v-if="showChat"
 				:current-user-id="currentUserId"
 				:theme="theme"
 				:is-device="isDevice"
 				@show-demo-options="showDemoOptions = $event"
 			/>
-
-			<!-- <div class="version-container">
-				v1.0.0
-			</div> -->
 		</div>
 	</div>
 </template>
-
-<script>
-import * as firestoreService from '@/database/firestore'
-import * as storageService from '@/database/storage'
-
-import ChatContainer from './ChatContainer'
-
-export default {
-	components: {
-		ChatContainer
-	},
-
-	data() {
-		return {
-			theme: 'light',
-			showChat: true,
-			users: [
-				{
-					_id: '6R0MijpK6M4AIrwaaCY2',
-					username: 'Luke',
-					avatar: 'https://66.media.tumblr.com/avatar_c6a8eae4303e_512.pnj'
-				},
-				{
-					_id: 'SGmFnBZB4xxMv9V4CVlW',
-					username: 'Leia',
-					avatar: 'https://media.glamour.com/photos/5695e9d716d0dc3747eea3ef/master/w_1600,c_limit/beauty-2015-12-princess-leia-1-main.jpg'
-				},
-				{
-					_id: '6jMsIXUrBHBj7o2cRlau',
-					username: 'Yoda',
-					avatar:
-						'https://vignette.wikia.nocookie.net/teamavatarone/images/4/45/Yoda.jpg/revision/latest?cb=20130224160049'
-				}
-			],
-			currentUserId: '6R0MijpK6M4AIrwaaCY2',
-			isDevice: false,
-			showDemoOptions: true,
-			updatingData: false
-		}
-	},
-
-	computed: {
-		showOptions() {
-			return !this.isDevice || this.showDemoOptions
-		}
-	},
-
-	watch: {
-		currentUserId() {
-			this.showChat = false
-			setTimeout(() => (this.showChat = true), 150)
-		}
-	},
-
-	mounted() {
-		this.isDevice = window.innerWidth < 500
-		window.addEventListener('resize', ev => {
-			if (ev.isTrusted) this.isDevice = window.innerWidth < 500
-		})
-	},
-
-	methods: {
-		resetData() {
-			firestoreService.getAllRooms().then(({ data }) => {
-				data.forEach(async room => {
-					await firestoreService.getMessages(room.id).then(({ data }) => {
-						data.forEach(message => {
-							firestoreService.deleteMessage(room.id, message.id)
-							if (message.files) {
-								message.files.forEach(file => {
-									storageService.deleteFile(
-										this.currentUserId,
-										message.id,
-										file
-									)
-								})
-							}
-						})
-					})
-
-					firestoreService.deleteRoom(room.id)
-				})
-			})
-
-			firestoreService.getAllUsers().then(({ data }) => {
-				data.forEach(user => {
-					firestoreService.deleteUser(user.id)
-				})
-			})
-		},
-		async addData() {
-			this.updatingData = true
-
-			const user1 = this.users[0]
-			await firestoreService.addIdentifiedUser(user1._id, user1)
-
-			const user2 = this.users[1]
-			await firestoreService.addIdentifiedUser(user2._id, user2)
-
-			const user3 = this.users[2]
-			await firestoreService.addIdentifiedUser(user3._id, user3)
-
-			await firestoreService.addRoom({
-				users: [user1._id, user2._id],
-				lastUpdated: new Date()
-			})
-			await firestoreService.addRoom({
-				users: [user1._id, user3._id],
-				lastUpdated: new Date()
-			})
-			await firestoreService.addRoom({
-				users: [user2._id, user3._id],
-				lastUpdated: new Date()
-			})
-			await firestoreService.addRoom({
-				users: [user1._id, user2._id, user3._id],
-				lastUpdated: new Date()
-			})
-
-			this.updatingData = false
-			location.reload()
-		}
-	}
-}
-</script>
 
 <style lang="scss">
 body {

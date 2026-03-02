@@ -1,3 +1,45 @@
+<script setup lang="ts">
+import { ref, watch } from 'vue'
+
+const props = defineProps<{
+	filteredEmojis: string[]
+	selectItem: boolean | null
+	activeUpOrDown: number | null
+}>()
+
+const emit = defineEmits<{
+	'select-emoji': [emoji: string]
+	'activate-item': []
+}>()
+
+const activeItem = ref<number | null>(null)
+
+watch(() => props.filteredEmojis, (val, oldVal) => {
+	if (!oldVal.length || val.length !== oldVal.length) {
+		activeItem.value = 0
+	}
+})
+
+watch(() => props.selectItem, (val) => {
+	if (val) {
+		emit('select-emoji', props.filteredEmojis[activeItem.value!])
+	}
+})
+
+watch(() => props.activeUpOrDown, () => {
+	if (
+		props.activeUpOrDown! > 0
+		&& activeItem.value! < props.filteredEmojis.length - 1
+	) {
+		activeItem.value!++
+	}
+	else if (props.activeUpOrDown! < 0 && activeItem.value! > 0) {
+		activeItem.value!--
+	}
+	emit('activate-item')
+})
+</script>
+
 <template>
 	<transition name="vac-slide-up">
 		<div v-if="filteredEmojis.length" class="vac-emojis-container">
@@ -14,47 +56,3 @@
 		</div>
 	</transition>
 </template>
-
-<script>
-export default {
-	name: 'RoomEmojis',
-
-	props: {
-		filteredEmojis: { type: Array, required: true },
-		selectItem: { type: Boolean, default: null },
-		activeUpOrDown: { type: Number, default: null }
-	},
-
-	emits: ['select-emoji', 'activate-item'],
-
-	data() {
-		return {
-			activeItem: null
-		}
-	},
-
-	watch: {
-		filteredEmojis(val, oldVal) {
-			if (!oldVal.length || val.length !== oldVal.length) {
-				this.activeItem = 0
-			}
-		},
-		selectItem(val) {
-			if (val) {
-				this.$emit('select-emoji', this.filteredEmojis[this.activeItem])
-			}
-		},
-		activeUpOrDown() {
-			if (
-				this.activeUpOrDown > 0 &&
-				this.activeItem < this.filteredEmojis.length - 1
-			) {
-				this.activeItem++
-			} else if (this.activeUpOrDown < 0 && this.activeItem > 0) {
-				this.activeItem--
-			}
-			this.$emit('activate-item')
-		}
-	}
-}
-</script>

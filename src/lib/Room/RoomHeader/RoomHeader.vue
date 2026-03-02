@@ -1,3 +1,87 @@
+<script setup lang="ts">
+import type { CustomAction, Room, I18n } from '@/types'
+
+import { computed, ref, watch } from 'vue'
+
+import SvgIcon from '@/components/SvgIcon/SvgIcon.vue'
+import { vOnClickOutside } from '@vueuse/components'
+
+import typingText from '@/utils/typing-text'
+
+const props = defineProps<{
+	currentUserId: string | number
+	i18n: I18n
+	singleRoom: boolean
+	showRoomsList: boolean
+	isMobile: boolean
+	roomInfoEnabled: boolean
+	menuActions: CustomAction[]
+	room: Room
+	messageSelectionEnabled: boolean
+	messageSelectionActions: CustomAction[]
+	selectedMessagesTotal: number
+}>()
+
+const emit = defineEmits<{
+	'toggle-rooms-list': []
+	'room-info': []
+	'menu-action-handler': [action: CustomAction]
+	'cancel-message-selection': []
+	'message-selection-action-handler': [action: CustomAction]
+}>()
+
+const menuOpened = ref(false)
+const messageSelectionAnimationEnded = ref(true)
+
+const typingUsers = computed(() => {
+	return typingText(props.room, String(props.currentUserId), props.i18n)
+})
+
+const userStatus = computed(() => {
+	if (!props.room.users || props.room.users.length !== 2) return
+
+	const user = props.room.users.find(u => u._id !== props.currentUserId)
+
+	if (!user?.status) return
+
+	let text = ''
+
+	if (user.status.state === 'online') {
+		text = props.i18n.isOnline
+	} else if (user.status.lastChanged) {
+		text = props.i18n.lastSeen + user.status.lastChanged
+	}
+
+	return text
+})
+
+watch(
+	() => props.messageSelectionEnabled,
+	val => {
+		if (val) {
+			messageSelectionAnimationEnded.value = false
+		} else {
+			setTimeout(() => {
+				messageSelectionAnimationEnded.value = true
+			}, 300)
+		}
+	}
+)
+
+function menuActionHandler(action: CustomAction): void {
+	closeMenu()
+	emit('menu-action-handler', action)
+}
+
+function closeMenu(): void {
+	menuOpened.value = false
+}
+
+function messageSelectionActionHandler(action: CustomAction): void {
+	emit('message-selection-action-handler', action)
+}
+</script>
+
 <template>
 	<div class="vac-room-header vac-app-border-b">
 		<slot name="room-header">
@@ -23,7 +107,7 @@
 							class="vac-selection-cancel vac-item-clickable"
 							@click="$emit('cancel-message-selection')"
 						>
-							{{ textMessages.CANCEL_SELECT_MESSAGE }}
+							{{ i18n.cancelSelectMessage }}
 						</div>
 					</div>
 				</transition>
@@ -40,7 +124,7 @@
 						@click="$emit('toggle-rooms-list')"
 					>
 						<slot name="toggle-icon">
-							<svg-icon name="toggle" />
+							<SvgIcon name="toggle" />
 						</slot>
 					</div>
 					<div
@@ -76,13 +160,13 @@
 							@click="menuOpened = !menuOpened"
 						>
 							<slot name="menu-icon">
-								<svg-icon name="menu" />
+								<SvgIcon name="menu" />
 							</slot>
 						</div>
 						<transition v-if="menuActions.length" name="vac-slide-left">
 							<div
 								v-if="menuOpened"
-								v-click-outside="closeMenu"
+								v-on-click-outside="closeMenu"
 								class="vac-menu-options"
 							>
 								<div class="vac-menu-list">
@@ -103,98 +187,3 @@
 		</slot>
 	</div>
 </template>
-
-<script>
-import SvgIcon from '../../../components/SvgIcon/SvgIcon'
-
-import vClickOutside from '../../../utils/on-click-outside'
-import typingText from '../../../utils/typing-text'
-
-export default {
-	name: 'RoomHeader',
-	components: {
-		SvgIcon
-	},
-
-	directives: {
-		clickOutside: vClickOutside
-	},
-
-	props: {
-		currentUserId: { type: [String, Number], required: true },
-		textMessages: { type: Object, required: true },
-		singleRoom: { type: Boolean, required: true },
-		showRoomsList: { type: Boolean, required: true },
-		isMobile: { type: Boolean, required: true },
-		roomInfoEnabled: { type: Boolean, required: true },
-		menuActions: { type: Array, required: true },
-		room: { type: Object, required: true },
-		messageSelectionEnabled: { type: Boolean, required: true },
-		messageSelectionActions: { type: Array, required: true },
-		selectedMessagesTotal: { type: Number, required: true }
-	},
-
-	emits: [
-		'toggle-rooms-list',
-		'room-info',
-		'menu-action-handler',
-		'cancel-message-selection',
-		'message-selection-action-handler'
-	],
-
-	data() {
-		return {
-			menuOpened: false,
-			messageSelectionAnimationEnded: true
-		}
-	},
-
-	computed: {
-		typingUsers() {
-			return typingText(this.room, this.currentUserId, this.textMessages)
-		},
-		userStatus() {
-			if (!this.room.users || this.room.users.length !== 2) return
-
-			const user = this.room.users.find(u => u._id !== this.currentUserId)
-
-			if (!user?.status) return
-
-			let text = ''
-
-			if (user.status.state === 'online') {
-				text = this.textMessages.IS_ONLINE
-			} else if (user.status.lastChanged) {
-				text = this.textMessages.LAST_SEEN + user.status.lastChanged
-			}
-
-			return text
-		}
-	},
-
-	watch: {
-		messageSelectionEnabled(val) {
-			if (val) {
-				this.messageSelectionAnimationEnded = false
-			} else {
-				setTimeout(() => {
-					this.messageSelectionAnimationEnded = true
-				}, 300)
-			}
-		}
-	},
-
-	methods: {
-		menuActionHandler(action) {
-			this.closeMenu()
-			this.$emit('menu-action-handler', action)
-		},
-		closeMenu() {
-			this.menuOpened = false
-		},
-		messageSelectionActionHandler(action) {
-			this.$emit('message-selection-action-handler', action)
-		}
-	}
-}
-</script>

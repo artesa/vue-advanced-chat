@@ -1,3 +1,67 @@
+<script setup lang="ts">
+import type {
+	LinkOptions,
+	Message,
+	MessageFile,
+	Room,
+	TextFormatting,
+} from '@/types'
+
+import { computed } from 'vue'
+import FormatMessage from '@/components/FormatMessage/FormatMessage.vue'
+
+import SvgIcon from '@/components/SvgIcon/SvgIcon.vue'
+
+import {
+	isAudioFile,
+	isImageFile,
+	isVideoFile,
+} from '@/utils/media-file'
+
+import AudioPlayer from '../../RoomMessage/AudioPlayer/AudioPlayer.vue'
+
+const props = withDefaults(
+	defineProps<{
+		room: Room
+		messageReply?: Message | null
+		textFormatting: TextFormatting
+		linkOptions: LinkOptions
+	}>(),
+	{
+		messageReply: null,
+	},
+)
+
+defineEmits<{
+	'reset-message': []
+}>()
+
+const firstFile = computed(() => {
+	return (props.messageReply?.files?.length ? props.messageReply.files[0] : {}) as MessageFile
+})
+
+const isImage = computed(() => {
+	return isImageFile(firstFile.value)
+})
+
+const isVideo = computed(() => {
+	return isVideoFile(firstFile.value)
+})
+
+const isAudio = computed(() => {
+	return isAudioFile(firstFile.value)
+})
+
+const isOtherFile = computed(() => {
+	return (
+		props.messageReply?.files?.length
+		&& !isAudio.value
+		&& !isVideo.value
+		&& !isImage.value
+	)
+})
+</script>
+
 <template>
 	<transition name="vac-slide-up">
 		<div
@@ -10,9 +74,9 @@
 						{{ messageReply.username }}
 					</div>
 					<div class="vac-reply-content">
-						<format-message
+						<FormatMessage
 							:message-id="messageReply._id"
-							:content="messageReply.content"
+							:content="messageReply.content ?? ''"
 							:users="room.users"
 							:text-formatting="textFormatting"
 							:link-options="linkOptions"
@@ -21,13 +85,13 @@
 					</div>
 				</div>
 
-				<img v-if="isImage" :src="firstFile.url" class="vac-image-reply" />
+				<img v-if="isImage" :src="firstFile.url" class="vac-image-reply">
 
 				<video v-else-if="isVideo" controls class="vac-image-reply">
-					<source :src="firstFile.url" />
+					<source :src="firstFile.url">
 				</video>
 
-				<audio-player
+				<AudioPlayer
 					v-else-if="isAudio"
 					:src="firstFile.url"
 					:message-selection-enabled="false"
@@ -36,12 +100,12 @@
 					<template v-for="(idx, name) in $slots" #[name]="data">
 						<slot :name="name" v-bind="data" />
 					</template>
-				</audio-player>
+				</AudioPlayer>
 
 				<div v-else-if="isOtherFile" class="vac-image-reply vac-file-container">
 					<div>
 						<slot name="file-icon">
-							<svg-icon name="file" />
+							<SvgIcon name="file" />
 						</slot>
 					</div>
 					<div class="vac-text-ellipsis">
@@ -59,64 +123,10 @@
 			<div class="vac-icon-reply">
 				<div class="vac-svg-button" @click="$emit('reset-message')">
 					<slot name="reply-close-icon">
-						<svg-icon name="close-outline" />
+						<SvgIcon name="close-outline" />
 					</slot>
 				</div>
 			</div>
 		</div>
 	</transition>
 </template>
-
-<script>
-import SvgIcon from '../../../../components/SvgIcon/SvgIcon'
-import FormatMessage from '../../../../components/FormatMessage/FormatMessage'
-
-import AudioPlayer from '../../RoomMessage/AudioPlayer/AudioPlayer'
-
-import {
-	isAudioFile,
-	isImageFile,
-	isVideoFile
-} from '../../../../utils/media-file'
-
-export default {
-	name: 'RoomMessageReply',
-	components: {
-		SvgIcon,
-		FormatMessage,
-		AudioPlayer
-	},
-
-	props: {
-		room: { type: Object, required: true },
-		messageReply: { type: Object, default: null },
-		textFormatting: { type: Object, required: true },
-		linkOptions: { type: Object, required: true }
-	},
-
-	emits: ['reset-message'],
-
-	computed: {
-		firstFile() {
-			return this.messageReply?.files?.length ? this.messageReply.files[0] : {}
-		},
-		isImage() {
-			return isImageFile(this.firstFile)
-		},
-		isVideo() {
-			return isVideoFile(this.firstFile)
-		},
-		isAudio() {
-			return isAudioFile(this.firstFile)
-		},
-		isOtherFile() {
-			return (
-				this.messageReply?.files?.length &&
-				!this.isAudio &&
-				!this.isVideo &&
-				!this.isImage
-			)
-		}
-	}
-}
-</script>

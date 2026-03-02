@@ -1,3 +1,26 @@
+<script setup lang="ts">
+import type { Room, I18n } from '@/types'
+
+import { computed } from 'vue'
+
+import SvgIcon from '../../../components/SvgIcon/SvgIcon.vue'
+
+const props = defineProps<{
+	i18n: I18n
+	showSearch: boolean
+	showAddRoom: boolean
+	rooms: Room[]
+	loadingRooms: boolean
+}>()
+
+defineEmits<{
+	'search-room': [event: Event]
+	'add-room': []
+}>()
+
+const showSearchBar = computed(() => props.showSearch || props.showAddRoom)
+</script>
+
 <template>
 	<div
 		:class="{
@@ -8,13 +31,13 @@
 		<template v-if="showSearch">
 			<div v-if="!loadingRooms && rooms.length" class="vac-icon-search">
 				<slot name="search-icon">
-					<svg-icon name="search" />
+					<SvgIcon name="search" />
 				</slot>
 			</div>
 			<input
 				v-if="!loadingRooms && rooms.length"
 				type="search"
-				:placeholder="textMessages.SEARCH"
+				:placeholder="i18n.search"
 				autocomplete="off"
 				class="vac-input"
 				@input="$emit('search-room', $event)"
@@ -26,33 +49,8 @@
 			@click="$emit('add-room')"
 		>
 			<slot name="add-icon">
-				<svg-icon name="add" />
+				<SvgIcon name="add" />
 			</slot>
 		</div>
 	</div>
 </template>
-
-<script>
-import SvgIcon from '../../../components/SvgIcon/SvgIcon'
-
-export default {
-	name: 'RoomsSearch',
-	components: { SvgIcon },
-
-	props: {
-		textMessages: { type: Object, required: true },
-		showSearch: { type: Boolean, required: true },
-		showAddRoom: { type: Boolean, required: true },
-		rooms: { type: Array, required: true },
-		loadingRooms: { type: Boolean, required: true }
-	},
-
-	emits: ['search-room', 'add-room'],
-
-	computed: {
-		showSearchBar() {
-			return this.showSearch || this.showAddRoom
-		}
-	}
-}
-</script>

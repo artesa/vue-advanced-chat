@@ -1,3 +1,52 @@
+<script setup lang="ts">
+import type { LinkOptions, Message, MessageFile, RoomUser, TextFormatting } from '@/types'
+
+import { computed } from 'vue'
+import FormatMessage from '../../../../components/FormatMessage/FormatMessage.vue'
+
+import SvgIcon from '../../../../components/SvgIcon/SvgIcon.vue'
+
+import {
+	isAudioFile,
+	isImageFile,
+	isVideoFile,
+} from '../../../../utils/media-file'
+
+import AudioPlayer from '../AudioPlayer/AudioPlayer.vue'
+
+const props = defineProps<{
+	message: Message
+	textFormatting: TextFormatting
+	linkOptions: LinkOptions
+	roomUsers: RoomUser[]
+}>()
+
+const replyUsername = computed(() => {
+	const { senderId } = props.message.replyMessage!
+	const replyUser = props.roomUsers.find(user => user._id === senderId)
+	return replyUser ? replyUser.username : ''
+})
+
+const firstFile = computed(() => {
+	return (props.message.replyMessage?.files?.length
+		? props.message.replyMessage.files[0]
+		: {}) as MessageFile
+})
+
+const isAudio = computed(() => isAudioFile(firstFile.value))
+const isImage = computed(() => isImageFile(firstFile.value))
+const isVideo = computed(() => isVideoFile(firstFile.value))
+
+const isOtherFile = computed(() => {
+	return (
+		props.message.replyMessage?.files?.length
+		&& !isAudio.value
+		&& !isVideo.value
+		&& !isImage.value
+	)
+})
+</script>
+
 <template>
 	<div class="vac-reply-message">
 		<div class="vac-reply-username">
@@ -8,33 +57,31 @@
 			<div
 				class="vac-message-image vac-message-image-reply"
 				:style="{
-					'background-image': `url('${firstFile.url}')`
+					'background-image': `url('${firstFile.url}')`,
 				}"
 			/>
 		</div>
 
 		<div v-else-if="isVideo" class="vac-video-reply-container">
 			<video controls>
-				<source :src="firstFile.url" />
+				<source :src="firstFile.url">
 			</video>
 		</div>
 
-		<audio-player
+		<AudioPlayer
 			v-else-if="isAudio"
 			:src="firstFile.url"
 			:message-selection-enabled="false"
-			@update-progress-time="progressTime = $event"
-			@hover-audio-progress="hoverAudioProgress = $event"
 		>
 			<template v-for="(idx, name) in $slots" #[name]="data">
 				<slot :name="name" v-bind="data" />
 			</template>
-		</audio-player>
+		</AudioPlayer>
 
 		<div v-else-if="isOtherFile" class="vac-file-container">
 			<div>
 				<slot name="file-icon">
-					<svg-icon name="file" />
+					<SvgIcon name="file" />
 				</slot>
 			</div>
 			<div class="vac-text-ellipsis">
@@ -49,9 +96,9 @@
 		</div>
 
 		<div class="vac-reply-content">
-			<format-message
-				:message-id="message.replyMessage._id"
-				:content="message.replyMessage.content"
+			<FormatMessage
+				:message-id="message.replyMessage?._id"
+				:content="message.replyMessage?.content ?? ''"
 				:users="roomUsers"
 				:text-formatting="textFormatting"
 				:link-options="linkOptions"
@@ -60,58 +107,3 @@
 		</div>
 	</div>
 </template>
-
-<script>
-import SvgIcon from '../../../../components/SvgIcon/SvgIcon'
-import FormatMessage from '../../../../components/FormatMessage/FormatMessage'
-
-import AudioPlayer from '../AudioPlayer/AudioPlayer'
-
-import {
-	isAudioFile,
-	isImageFile,
-	isVideoFile
-} from '../../../../utils/media-file'
-
-export default {
-	name: 'MessageReply',
-	components: { AudioPlayer, SvgIcon, FormatMessage },
-
-	props: {
-		message: { type: Object, required: true },
-		textFormatting: { type: Object, required: true },
-		linkOptions: { type: Object, required: true },
-		roomUsers: { type: Array, required: true }
-	},
-
-	computed: {
-		replyUsername() {
-			const { senderId } = this.message.replyMessage
-			const replyUser = this.roomUsers.find(user => user._id === senderId)
-			return replyUser ? replyUser.username : ''
-		},
-		firstFile() {
-			return this.message.replyMessage?.files?.length
-				? this.message.replyMessage.files[0]
-				: {}
-		},
-		isAudio() {
-			return isAudioFile(this.firstFile)
-		},
-		isImage() {
-			return isImageFile(this.firstFile)
-		},
-		isVideo() {
-			return isVideoFile(this.firstFile)
-		},
-		isOtherFile() {
-			return (
-				this.message.replyMessage.files?.length &&
-				!this.isAudio &&
-				!this.isVideo &&
-				!this.isImage
-			)
-		}
-	}
-}
-</script>
