@@ -215,28 +215,28 @@ export interface MessageFileAction {
 	action: string
 }
 
-export type ToggleRoomsListEvent = { opened: boolean }
+export interface ToggleRoomsListEvent { opened: boolean }
 export type RoomInfoEvent = Room
-export type FetchMessagesEvent = { room: Room, options?: { reset?: boolean } }
-export type SendMessageEvent = { content: string, roomId: StringNumber, files?: MessageFile[], replyMessage?: Message | null, usersTag?: string[] }
-export type EditMessageEvent = { messageId: StringNumber, newContent: string, roomId: StringNumber, files?: MessageFile[], replyMessage?: Message | null, usersTag?: string[] }
-export type DeleteMessageEvent = { message: unknown, roomId: StringNumber }
-export type OpenFileEvent = { message: Message, file: MessageFile, defaultHandle?: () => void }
+export interface FetchMessagesEvent { room: Room, options?: { reset?: boolean } }
+export interface SendMessageEvent { content: string, roomId: StringNumber, files?: MessageFile[], replyMessage?: Message | null, usersTag?: string[] }
+export interface EditMessageEvent { messageId: StringNumber, newContent: string, roomId: StringNumber, files?: MessageFile[], replyMessage?: Message | null, usersTag?: string[] }
+export interface DeleteMessageEvent { message: Message, roomId: StringNumber }
+export interface OpenFileEvent { message: Message, file: MessageFile, defaultHandle?: () => void }
 export type OpenUserTagEvent = unknown
-export type OpenFailedMessageEvent = { message: Message, roomId: StringNumber }
-export type MenuActionHandlerEvent = { action: CustomAction, roomId: StringNumber }
-export type MessageActionHandlerEvent = { action: MessageAction, message: Message, roomId: StringNumber }
-export type SendMessageReactionEvent = { messageId: StringNumber, reaction: string, remove: boolean, roomId: StringNumber }
-export type TypingMessageEvent = { message: unknown, roomId: StringNumber }
-export type TextareaActionHandlerEvent = { message: unknown, roomId: StringNumber }
-export type SearchRoomEvent = { value: string, roomId: StringNumber }
-export type RoomActionHandlerEvent = { action: CustomAction, roomId: StringNumber }
-export type MessageSelectionActionHandlerEvent = { action: CustomAction, messages: Message[], roomId: StringNumber }
+export interface OpenFailedMessageEvent { message: Message, roomId: StringNumber }
+export interface MenuActionHandlerEvent { action: CustomAction, roomId: StringNumber }
+export interface MessageActionHandlerEvent { action: MessageAction, message: Message, roomId: StringNumber }
+export interface SendMessageReactionEvent { messageId: StringNumber, reaction: string, remove: boolean, roomId: StringNumber }
+export interface TypingMessageEvent { message: Message, roomId: StringNumber }
+export interface TextareaActionHandlerEvent { message: Message, roomId: StringNumber }
+export interface SearchRoomEvent { value: string, roomId: StringNumber }
+export interface RoomActionHandlerEvent { action: CustomAction, roomId: StringNumber }
+export interface MessageSelectionActionHandlerEvent { action: CustomAction, messages: Message[], roomId: StringNumber }
 
 // Room component event payloads (without roomId)
 export type RoomSendMessageEvent = Omit<SendMessageEvent, 'roomId'>
 export type RoomEditMessageEvent = Omit<EditMessageEvent, 'roomId'>
-export type RoomOpenFileEvent = { message: Message, file: MessageFileAction }
+export interface RoomOpenFileEvent { message: Message, file: MessageFileAction }
 export type RoomOpenFailedMessageEvent = Omit<OpenFailedMessageEvent, 'roomId'>
 export type RoomMessageActionHandlerEvent = Omit<MessageActionHandlerEvent, 'roomId'>
 export type RoomSendMessageReactionEvent = Omit<SendMessageReactionEvent, 'roomId'>

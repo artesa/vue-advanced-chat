@@ -8,12 +8,8 @@
 		"dev": "vite",
 		"build": "vite build",
 		"serve": "vite preview",
-		"s": "npm run dev",
 		"lint": "eslint --fix src",
-		"reset": "rm -rf node_modules && rm -rf package-lock.json && npm i",
-		"reset-all": "npm run reset && cd .. && npm run reset",
-		"gpages": "sh deploy.sh",
-		"latest": "npm i https://github.com/antoine92190/vue-advanced-chat/tarball/master"
+		"typecheck": "vue-tsc --noEmit"
 	},
 	"dependencies": {
 		"vue": "^3.5.29",
@@ -22,6 +18,8 @@
 	"devDependencies": {
 		"@vitejs/plugin-vue": "6.0.4",
 		"sass": "1.97.3",
-		"vite": "^7.3.1"
+		"typescript": "^5.8.2",
+		"vite": "^7.3.1",
+		"vue-tsc": "^2.2.8"
 	}
 }

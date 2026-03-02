@@ -1,4 +1,3 @@
-import { resolve } from 'node:path'
 import vue from '@vitejs/plugin-vue'
 import { defineConfig } from 'vite'
 
@@ -17,7 +16,7 @@ export default defineConfig({
 	resolve: {
 		extensions: ['.mjs', '.js', '.ts', '.jsx', '.tsx', '.json', '.vue'],
 		alias: {
-			'@': resolve(__dirname, './src'),
+			'@': `${import.meta.dirname}/src`,
 		},
 	},
 	server: {

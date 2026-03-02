@@ -16,14 +16,17 @@ function getSupportedMimeType(): string {
 		'audio/webm',
 	]
 	for (const type of types) {
-		if (MediaRecorder.isTypeSupported(type)) return type
+		if (MediaRecorder.isTypeSupported(type))
+			return type
 	}
 	return ''
 }
 
 export function mimeToExtension(mimeType: string): string {
-	if (mimeType.includes('webm')) return 'webm'
-	if (mimeType.includes('ogg')) return 'ogg'
+	if (mimeType.includes('webm'))
+		return 'webm'
+	if (mimeType.includes('ogg'))
+		return 'ogg'
 	return 'webm'
 }
 
@@ -120,12 +123,14 @@ export default class {
 		}
 
 		const options: MediaRecorderOptions = {}
-		if (this.mimeType) options.mimeType = this.mimeType
+		if (this.mimeType)
+			options.mimeType = this.mimeType
 
 		this.mediaRecorder = new MediaRecorder(stream, options)
 
 		this.mediaRecorder.ondataavailable = (e: BlobEvent) => {
-			if (e.data.size > 0) this.chunks.push(e.data)
+			if (e.data.size > 0)
+				this.chunks.push(e.data)
 		}
 
 		this.mediaRecorder.onstop = () => {
@@ -155,7 +160,8 @@ export default class {
 	}
 
 	private _trackVolume(): void {
-		if (!this.analyser) return
+		if (!this.analyser)
+			return
 
 		const data = new Float32Array(this.analyser.fftSize)
 		this.analyser.getFloatTimeDomainData(data)

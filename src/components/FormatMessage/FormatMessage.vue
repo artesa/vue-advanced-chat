@@ -4,7 +4,7 @@ import type {
 	RoomUser,
 	StringNumber,
 	TextFormatting,
-	TextMessages,
+	TextMessages
 } from '@/types'
 
 import { computed } from 'vue'
@@ -47,8 +47,8 @@ const props = withDefaults(
 		linkify: true,
 		singleLine: false,
 		reply: false,
-		textMessages: () => ({}) as TextMessages,
-	},
+		textMessages: () => ({}) as TextMessages
+	}
 )
 
 const emit = defineEmits<{
@@ -62,8 +62,7 @@ function checkType(message: ParsedMessage, type: string): boolean {
 function checkImageType(message: ParsedMessage): boolean {
 	let index = message.value.lastIndexOf('.')
 	const slashIndex = message.value.lastIndexOf('/')
-	if (slashIndex > index)
-    index = -1
+	if (slashIndex > index) index = -1
 
 	const type = message.value.substring(index + 1, message.value.length)
 
@@ -112,8 +111,8 @@ const parsedMessage = computed<ParsedMessage[]>(() => {
 				singleLine: props.singleLine,
 				reply: props.reply,
 				users: props.users,
-				...props.textFormatting,
-			},
+				...props.textFormatting
+			}
 		}
 	} else {
 		options = {}
@@ -121,10 +120,10 @@ const parsedMessage = computed<ParsedMessage[]>(() => {
 
 	const message: ParsedMessage[] = markdown(
 		String(props.content ?? ''),
-		options,
+		options
 	)
 
-	message.forEach((m) => {
+	message.forEach(m => {
 		m.markdown = checkType(m, 'markdown')
 		m.tag = checkType(m, 'tag')
 		m.image = checkImageType(m)
@@ -155,7 +154,7 @@ const parsedMessage = computed<ParsedMessage[]>(() => {
 					:is="message.url ? 'a' : 'span'"
 					:class="{
 						'vac-text-ellipsis': singleLine,
-						'vac-text-tag': !singleLine && !reply && message.tag,
+						'vac-text-tag': !singleLine && !reply && message.tag
 					}"
 					:href="message.href"
 					:target="message.href ? linkOptions.target : null"
@@ -183,7 +182,7 @@ const parsedMessage = computed<ParsedMessage[]>(() => {
 								class="vac-image-link"
 								:style="{
 									'background-image': `url('${message.value}')`,
-									height: message.height,
+									height: message.height
 								}"
 							/>
 						</div>

@@ -1,60 +1,45 @@
-<script>
-import ChatContainer from './ChatContainer'
+<script setup lang="ts">
+import { computed, onMounted, ref, watch } from 'vue'
+import ChatContainer from './ChatContainer.vue'
 
-export default {
-	components: {
-		ChatContainer,
+const theme = ref<'light' | 'dark'>('light')
+const showChat = ref(true)
+const users = [
+	{
+		_id: '6R0MijpK6M4AIrwaaCY2',
+		username: 'Luke',
+		avatar: 'https://66.media.tumblr.com/avatar_c6a8eae4303e_512.pnj',
 	},
+	{
+		_id: 'SGmFnBZB4xxMv9V4CVlW',
+		username: 'Leia',
+		avatar: 'https://media.glamour.com/photos/5695e9d716d0dc3747eea3ef/master/w_1600,c_limit/beauty-2015-12-princess-leia-1-main.jpg',
+	},
+	{
+		_id: '6jMsIXUrBHBj7o2cRlau',
+		username: 'Yoda',
+		avatar:
+			'https://vignette.wikia.nocookie.net/teamavatarone/images/4/45/Yoda.jpg/revision/latest?cb=20130224160049',
+	},
+]
+const currentUserId = ref('6R0MijpK6M4AIrwaaCY2')
+const isDevice = ref(false)
+const showDemoOptions = ref(true)
 
-	data() {
-		return {
-			theme: 'light',
-			showChat: true,
-			users: [
-				{
-					_id: '6R0MijpK6M4AIrwaaCY2',
-					username: 'Luke',
-					avatar: 'https://66.media.tumblr.com/avatar_c6a8eae4303e_512.pnj',
-				},
-				{
-					_id: 'SGmFnBZB4xxMv9V4CVlW',
-					username: 'Leia',
-					avatar: 'https://media.glamour.com/photos/5695e9d716d0dc3747eea3ef/master/w_1600,c_limit/beauty-2015-12-princess-leia-1-main.jpg',
-				},
-				{
-					_id: '6jMsIXUrBHBj7o2cRlau',
-					username: 'Yoda',
-					avatar:
-						'https://vignette.wikia.nocookie.net/teamavatarone/images/4/45/Yoda.jpg/revision/latest?cb=20130224160049',
-				},
-			],
-			currentUserId: '6R0MijpK6M4AIrwaaCY2',
-			isDevice: false,
-			showDemoOptions: true,
-		}
-	},
+const showOptions = computed(() => !isDevice.value || showDemoOptions.value)
 
-	computed: {
-		showOptions() {
-			return !this.isDevice || this.showDemoOptions
-		},
-	},
+watch(currentUserId, () => {
+	showChat.value = false
+	setTimeout(() => (showChat.value = true), 150)
+})
 
-	watch: {
-		currentUserId() {
-			this.showChat = false
-			setTimeout(() => (this.showChat = true), 150)
-		},
-	},
-
-	mounted() {
-		this.isDevice = window.innerWidth < 500
-		window.addEventListener('resize', (ev) => {
-			if (ev.isTrusted)
-				this.isDevice = window.innerWidth < 500
-		})
-	},
-}
+onMounted(() => {
+	isDevice.value = window.innerWidth < 500
+	window.addEventListener('resize', (ev) => {
+		if (ev.isTrusted)
+			isDevice.value = window.innerWidth < 500
+	})
+})
 </script>
 
 <template>
