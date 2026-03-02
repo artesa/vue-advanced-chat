@@ -46,7 +46,6 @@
 		"build": "vite build && vite build --config vite.config.ce.js",
 		"serve": "vite preview",
 		"clean:lib": "rm -rf dist/*.js && rm -rf dist/*.map && rm -rf dist/*.css && rm -rf dist/*.html && rm -rf dist/ce",
-		"prepublish": "npm run lint && npm run build",
 		"version": "npm run build",
 		"typecheck": "vue-tsc --noEmit",
 		"lint": "eslint",
