@@ -52,7 +52,9 @@
 		"lint": "eslint",
 		"reset": "rm -rf node_modules && rm -rf package-lock.json && npm i",
 		"reset-all": "cd demo && npm run reset-all",
-		"pull-master": "git pull origin master --no-edit --no-ff"
+		"pull-master": "git pull origin master --no-edit --no-ff",
+		"test": "vitest run",
+		"test:update": "vitest run --update"
 	},
 	"files": [
 		"dist/*"
@@ -69,6 +71,7 @@
 		"vite": "^7.3.1",
 		"vite-plugin-dts": "^4.5.4",
 		"vitest": "^4.0.18",
+		"vitest-browser-vue": "^2.0.2",
 		"vue": "^3.5.29",
 		"vue-tsc": "^3.2.5"
 	},

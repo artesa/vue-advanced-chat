@@ -6,6 +6,14 @@ import type {
 	Message,
 	MessageAction,
 	Room,
+	RoomEditMessageEvent,
+	RoomMessageActionHandlerEvent,
+	RoomMessageSelectionActionHandlerEvent,
+	RoomOpenFailedMessageEvent,
+	RoomOpenFileEvent,
+	RoomSendMessageEvent,
+	RoomSendMessageReactionEvent,
+	RoomUser,
 	StringNumber,
 	TemplateText,
 	TextFormatting,
@@ -74,19 +82,19 @@ const props = withDefaults(defineProps<{
 const emit = defineEmits<{
 	'toggle-rooms-list': []
 	'room-info': []
-	'menu-action-handler': [value: unknown]
-	'message-selection-action-handler': [value: { action: CustomAction, messages: Message[] }]
-	'edit-message': [value: unknown]
-	'send-message': [value: unknown]
-	'delete-message': [value: Message]
-	'message-action-handler': [value: { action: MessageAction, message: Message }]
+	'menu-action-handler': [payload: CustomAction]
+	'message-selection-action-handler': [payload: RoomMessageSelectionActionHandlerEvent]
+	'edit-message': [payload: RoomEditMessageEvent]
+	'send-message': [payload: RoomSendMessageEvent]
+	'delete-message': [payload: Message]
+	'message-action-handler': [payload: RoomMessageActionHandlerEvent]
 	'fetch-messages': []
-	'send-message-reaction': [value: unknown]
-	'typing-message': [value: unknown]
-	'open-file': [value: { message: Message, file: unknown }]
-	'open-user-tag': [value: unknown]
-	'open-failed-message': [value: unknown]
-	'textarea-action-handler': [value: unknown]
+	'send-message-reaction': [payload: RoomSendMessageReactionEvent]
+	'typing-message': [payload: string | null]
+	'open-file': [payload: RoomOpenFileEvent]
+	'open-user-tag': [payload: RoomUser | undefined]
+	'open-failed-message': [payload: RoomOpenFailedMessageEvent]
+	'textarea-action-handler': [payload: string]
 }>()
 
 const root = useTemplateRef<HTMLElement>('root')
@@ -375,7 +383,7 @@ function loadMoreMessages() {
 	)
 }
 
-function messageActionHandler({ action, message }: { action: MessageAction, message: Message }) {
+function messageActionHandler({ action, message }: RoomMessageActionHandlerEvent) {
 	switch (action.name) {
 		case 'replyMessage':
 			initReplyMessage.value = message
@@ -408,7 +416,7 @@ function messageSelectionActionHandler(action: CustomAction) {
 	resetMessageSelection()
 }
 
-function sendMessageReaction(messageReaction: unknown) {
+function sendMessageReaction(messageReaction: RoomSendMessageReactionEvent) {
 	emit('send-message-reaction', messageReaction)
 }
 
@@ -428,11 +436,11 @@ function scrollToBottom() {
 	}, 50)
 }
 
-function openFile({ message, file }: { message: Message, file: unknown }) {
+function openFile({ message, file }: RoomOpenFileEvent) {
 	emit('open-file', { message, file })
 }
 
-function openUserTag(user: unknown) {
+function openUserTag(user: RoomUser | undefined) {
 	emit('open-user-tag', user)
 }
 

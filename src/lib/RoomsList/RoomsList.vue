@@ -42,7 +42,7 @@ const props = withDefaults(
 const emit = defineEmits<{
 	'add-room': []
 	'search-room': [value: string]
-	'room-action-handler': [value: unknown]
+	'room-action-handler': [value: { action: CustomAction, roomId: StringNumber }]
 	'loading-more-rooms': [value: boolean]
 	'fetch-room': [value: { room: Room }]
 	'fetch-more-rooms': []

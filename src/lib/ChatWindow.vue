@@ -11,11 +11,13 @@ import type {
 	MessageAction,
 	MessageActionHandlerEvent,
 	MessageFile,
+	MessageFileAction,
 	MessageSelectionActionHandlerEvent,
 	OpenFailedMessageEvent,
 	OpenFileEvent,
 	OpenUserTagEvent,
 	RoomActionHandlerEvent,
+	RoomUser,
 	RoomInfoEvent,
 	Room as RoomType,
 	SearchRoomEvent,
@@ -351,30 +353,29 @@ function fetchMessages(options?: { reset?: boolean }) {
 	emit('fetch-messages', { room: room.value as RoomType, options })
 }
 
-function sendMessage(message: SendMessageEvent) {
+function sendMessage(message: Omit<SendMessageEvent, 'roomId'>) {
 	emit('send-message', {
 		...message,
 		roomId: (room.value as RoomType).roomId,
 	})
 }
 
-function editMessage(message: EditMessageEvent) {
+function editMessage(message: Omit<EditMessageEvent, 'roomId'>) {
 	emit('edit-message', {
 		...message,
 		roomId: (room.value as RoomType).roomId,
 	})
 }
 
-function deleteMessage(message: unknown) {
+function deleteMessage(message: Message) {
 	emit('delete-message', { message, roomId: (room.value as RoomType).roomId })
 }
 
-function openFile(ev: unknown) {
-	const { message, file } = ev as { message: Message, file: MessageFile }
+function openFile({ message, file }: { message: Message, file: MessageFileAction }) {
 	if (props.handleCustomOpenFiles) {
 		emit('open-file', {
 			message,
-			file,
+			file: file.file,
 			defaultHandle: () => {
 				_openFile({ message, file })
 			},
@@ -385,46 +386,42 @@ function openFile(ev: unknown) {
 	}
 }
 
-function _openFile({ message, file }: { message: Message, file: MessageFile }) {
-	if (props.mediaPreviewEnabled && (file as any).action === 'preview') {
-		previewFile.value = (file as any).file!
+function _openFile({ message, file }: { message: Message, file: MessageFileAction }) {
+	if (props.mediaPreviewEnabled && file.action === 'preview') {
+		previewFile.value = file.file
 		showMediaPreview.value = true
 	}
 	else {
-		emit('open-file', { message, file })
+		emit('open-file', { message, file: file.file })
 	}
 }
 
-function openUserTag(user: unknown) {
+function openUserTag(user: RoomUser | undefined) {
 	emit('open-user-tag', user)
 }
 
-function openFailedMessage(ev: unknown) {
-	const { message } = ev as { message: Message }
+function openFailedMessage({ message }: { message: Message }) {
 	emit('open-failed-message', {
 		message,
 		roomId: (room.value as RoomType).roomId,
 	})
 }
 
-function menuActionHandler(ev: unknown) {
-	const action = ev as CustomAction
+function menuActionHandler(action: CustomAction) {
 	emit('menu-action-handler', {
 		action,
 		roomId: (room.value as RoomType).roomId,
 	})
 }
 
-function roomActionHandler(ev: unknown) {
-	const { action, roomId } = ev as Events['room-action-handler']
+function roomActionHandler({ action, roomId }: RoomActionHandlerEvent) {
 	emit('room-action-handler', {
 		action,
 		roomId,
 	})
 }
 
-function messageActionHandler(ev: unknown) {
-	const { action, message } = ev as { action: MessageAction, message: Message }
+function messageActionHandler({ action, message }: { action: MessageAction, message: Message }) {
 	emit('message-action-handler', {
 		action,
 		message,
@@ -432,8 +429,7 @@ function messageActionHandler(ev: unknown) {
 	})
 }
 
-function messageSelectionActionHandler(ev: unknown) {
-	const { action, messages } = ev as { action: CustomAction, messages: Message[] }
+function messageSelectionActionHandler({ action, messages }: { action: CustomAction, messages: Message[] }) {
 	emit('message-selection-action-handler', {
 		action,
 		messages,
@@ -441,22 +437,21 @@ function messageSelectionActionHandler(ev: unknown) {
 	})
 }
 
-function sendMessageReaction(ev: unknown) {
-	const messageReaction = ev as { messageId: StringNumber, reaction: string, remove: boolean }
+function sendMessageReaction(messageReaction: Omit<SendMessageReactionEvent, 'roomId'>) {
 	emit('send-message-reaction', {
 		...messageReaction,
 		roomId: (room.value as RoomType).roomId,
 	})
 }
 
-function typingMessage(message: unknown) {
+function typingMessage(message: string | null) {
 	emit('typing-message', {
 		message,
 		roomId: (room.value as RoomType).roomId,
 	})
 }
 
-function textareaActionHandler(message: unknown) {
+function textareaActionHandler(message: string) {
 	emit('textarea-action-handler', {
 		message,
 		roomId: (room.value as RoomType).roomId,

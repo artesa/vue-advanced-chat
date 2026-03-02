@@ -2,6 +2,7 @@
 import type {
 	LinkOptions,
 	RoomUser,
+	StringNumber,
 	TextFormatting,
 	TextMessages,
 } from '@/types'

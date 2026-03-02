@@ -210,11 +210,16 @@ export interface Props {
 	showMessagesStarted?: boolean
 }
 
+export interface MessageFileAction {
+	file: MessageFile
+	action: string
+}
+
 export type ToggleRoomsListEvent = { opened: boolean }
 export type RoomInfoEvent = Room
 export type FetchMessagesEvent = { room: Room, options?: { reset?: boolean } }
-export type SendMessageEvent = { content: string, roomId: StringNumber, files?: MessageFile[], replyMessage?: Message, usersTag?: string[] }
-export type EditMessageEvent = { messageId: StringNumber, newContent: string, roomId: StringNumber, files?: MessageFile[], replyMessage?: Message, usersTag?: string[] }
+export type SendMessageEvent = { content: string, roomId: StringNumber, files?: MessageFile[], replyMessage?: Message | null, usersTag?: string[] }
+export type EditMessageEvent = { messageId: StringNumber, newContent: string, roomId: StringNumber, files?: MessageFile[], replyMessage?: Message | null, usersTag?: string[] }
 export type DeleteMessageEvent = { message: unknown, roomId: StringNumber }
 export type OpenFileEvent = { message: Message, file: MessageFile, defaultHandle?: () => void }
 export type OpenUserTagEvent = unknown
@@ -227,3 +232,12 @@ export type TextareaActionHandlerEvent = { message: unknown, roomId: StringNumbe
 export type SearchRoomEvent = { value: string, roomId: StringNumber }
 export type RoomActionHandlerEvent = { action: CustomAction, roomId: StringNumber }
 export type MessageSelectionActionHandlerEvent = { action: CustomAction, messages: Message[], roomId: StringNumber }
+
+// Room component event payloads (without roomId)
+export type RoomSendMessageEvent = Omit<SendMessageEvent, 'roomId'>
+export type RoomEditMessageEvent = Omit<EditMessageEvent, 'roomId'>
+export type RoomOpenFileEvent = { message: Message, file: MessageFileAction }
+export type RoomOpenFailedMessageEvent = Omit<OpenFailedMessageEvent, 'roomId'>
+export type RoomMessageActionHandlerEvent = Omit<MessageActionHandlerEvent, 'roomId'>
+export type RoomSendMessageReactionEvent = Omit<SendMessageReactionEvent, 'roomId'>
+export type RoomMessageSelectionActionHandlerEvent = Omit<MessageSelectionActionHandlerEvent, 'roomId'>

@@ -3,6 +3,8 @@ import type {
 	LinkOptions,
 	Message,
 	MessageAction,
+	MessageFileAction,
+	MessageReactions as MessageReactionsType,
 	RoomUser,
 	StringNumber,
 	TextFormatting,
@@ -55,7 +57,7 @@ const props = withDefaults(
 
 const emit = defineEmits<{
 	(e: 'message-added', payload: { message: Message, index: number, ref: HTMLElement | undefined }): void
-	(e: 'open-file', payload: { message: Message, file: any }): void
+	(e: 'open-file', payload: { message: Message, file: MessageFileAction }): void
 	(e: 'open-user-tag', user: RoomUser | undefined): void
 	(e: 'open-failed-message', payload: { message: Message }): void
 	(e: 'message-action-handler', payload: { action: MessageAction, message: Message }): void
@@ -203,7 +205,7 @@ function resetMessageHover() {
 	hoverMessageId.value = null
 }
 
-function openFile(file: any) {
+function openFile(file: MessageFileAction) {
 	emit('open-file', { message: props.message, file })
 }
 
@@ -219,7 +221,7 @@ function messageActionHandler(action: MessageAction) {
 	}, 300)
 }
 
-function sendMessageReaction(payload: any) {
+function sendMessageReaction(payload: { emoji: string | { unicode: string }, reaction?: StringNumber[] | MessageReactionsType }) {
 	const emoji = payload.emoji
 	const reaction = payload.reaction
 	emit('send-message-reaction', {

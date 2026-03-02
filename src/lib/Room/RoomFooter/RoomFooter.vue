@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import type { LinkOptions, Message, MessageFile, Room, StringNumber, TemplateText, TextFormatting, TextMessages } from '@/types'
+import type { LinkOptions, Message, MessageFile, Room, RoomEditMessageEvent, RoomSendMessageEvent, RoomUser, StringNumber, TemplateText, TextFormatting, TextMessages } from '@/types'
+import type { NativeEmoji } from 'emoji-picker-element/shared'
 import { Database } from 'emoji-picker-element'
 
 import { computed, onBeforeUnmount, onMounted, ref, useTemplateRef, watch } from 'vue'
@@ -54,8 +55,8 @@ const props = withDefaults(defineProps<{
 })
 
 const emit = defineEmits<{
-	'edit-message': [value: unknown]
-	'send-message': [value: unknown]
+	'edit-message': [value: RoomEditMessageEvent]
+	'send-message': [value: RoomSendMessageEvent]
 	'update-edited-message-id': [value: string | undefined]
 	'textarea-action-handler': [value: string]
 	'typing-message': [value: string | null]
@@ -465,7 +466,7 @@ function sendMessage() {
 		)
 	})
 
-	const messageFiles = files.value.length ? files.value : null
+	const messageFiles = files.value.length ? files.value : undefined
 
 	if (editedMessage.value._id) {
 		if (
@@ -474,7 +475,7 @@ function sendMessage() {
 			|| files.value.length
 		) {
 			emit('edit-message', {
-				messageId: editedMessage.value._id,
+				messageId: editedMessage.value._id!,
 				newContent: msg,
 				files: messageFiles,
 				replyMessage: messageReply.value,
@@ -524,7 +525,7 @@ function editMessage(msg: Message) {
 			`@${user?.username || 'unknown'}`,
 		)
 
-		selectUserTag(user as { _id: string, username: string }, true)
+		selectUserTag(user, true)
 	})
 
 	message.value = messageContent
@@ -609,7 +610,7 @@ function updateShowUsersTag(query: string) {
 	)
 }
 
-function selectUserTag(user: any, editMode = false) {
+function selectUserTag(user: RoomUser | undefined, editMode = false) {
 	selectUsersTagItem.value = false
 
 	if (!user)
@@ -664,7 +665,7 @@ async function updateEmojis(query: string) {
 		return
 
 	const emojis = await emojisDB.getEmojiBySearchQuery(query)
-	filteredEmojis.value = emojis.map((emoji: any) => emoji.unicode)
+	filteredEmojis.value = emojis.map((emoji) => (emoji as NativeEmoji).unicode)
 }
 
 function resetFooterList(tagChar: string | null = null) {
