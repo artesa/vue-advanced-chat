@@ -41,7 +41,7 @@ export interface LastMessage {
 }
 
 export interface Room {
-	roomId: string
+	roomId: StringNumber
 	roomName: string
 	avatar: string
 	users: RoomUser[]
@@ -214,22 +214,22 @@ export interface Props {
 
 export interface Events {
 	'toggle-rooms-list': { opened: boolean }
-	'room-info': { room: Room }
+	'room-info': Room
 	'fetch-messages': { room: Room, options?: { reset?: boolean } }
-	'send-message': { content: string, roomId: string, files?: MessageFile[], replyMessage?: Message }
-	'edit-message': { messageId: string, newContent: string, roomId: string, files?: MessageFile[] }
-	'delete-message': { message: Message }
-	'open-file': { message: Message, file: MessageFile }
-	'open-user-tag': { user: RoomUser }
-	'open-failed-message': { message: Message }
-	'menu-action-handler': { action: CustomAction, roomId: string }
-	'message-action-handler': { action: MessageAction, message: Message }
-	'send-message-reaction': { reaction: { unicode: string, reaction: MessageReactions }, messageId: string, roomId: string }
-	'typing-message': { message: string, roomId: string }
-	'textarea-action-handler': { message: Message, roomId: string }
+	'send-message': { content: string, roomId: StringNumber, files?: MessageFile[], replyMessage?: Message, usersTag?: string[] }
+	'edit-message': { messageId: StringNumber, newContent: string, roomId: StringNumber, files?: MessageFile[], replyMessage?: Message, usersTag?: string[] }
+	'delete-message': { message: unknown, roomId: StringNumber }
+	'open-file': { message: Message, file: MessageFile, defaultHandle?: () => void }
+	'open-user-tag': unknown
+	'open-failed-message': { message: Message, roomId: StringNumber }
+	'menu-action-handler': { action: CustomAction, roomId: StringNumber }
+	'message-action-handler': { action: MessageAction, message: Message, roomId: StringNumber }
+	'send-message-reaction': { messageId: StringNumber, reaction: string, remove: boolean, roomId: StringNumber }
+	'typing-message': { message: unknown, roomId: StringNumber }
+	'textarea-action-handler': { message: unknown, roomId: StringNumber }
 	'fetch-more-rooms': void
 	'add-room': void
-	'search-room': { value: string }
-	'room-action-handler': { action: CustomAction, roomId: string }
-	'message-selection-action-handler': { action: CustomAction, messages: Message[] }
+	'search-room': { value: string, roomId: StringNumber }
+	'room-action-handler': { action: CustomAction, roomId: StringNumber }
+	'message-selection-action-handler': { action: CustomAction, messages: Message[], roomId: StringNumber }
 }

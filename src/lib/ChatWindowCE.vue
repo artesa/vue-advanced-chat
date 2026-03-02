@@ -7,6 +7,7 @@
 import type {
 	AutoScroll,
 	CustomAction,
+	Events,
 	LinkOptions,
 	Message,
 	MessageAction,
@@ -147,25 +148,25 @@ const props = withDefaults(
 )
 
 const emit = defineEmits<{
-	'toggle-rooms-list': [payload: { opened: boolean }]
-	'room-info': [room: RoomType]
-	'fetch-messages': [payload: { room: RoomType | Record<string, never>, options?: { reset?: boolean } }]
-	'send-message': [payload: unknown]
-	'edit-message': [payload: unknown]
-	'delete-message': [payload: unknown]
-	'open-file': [payload: unknown]
-	'open-user-tag': [payload: unknown]
-	'open-failed-message': [payload: unknown]
-	'menu-action-handler': [payload: unknown]
-	'message-action-handler': [payload: unknown]
-	'send-message-reaction': [payload: unknown]
-	'typing-message': [payload: unknown]
-	'textarea-action-handler': [payload: unknown]
+	'toggle-rooms-list': [payload: Events['toggle-rooms-list']]
+	'room-info': [payload: Events['room-info']]
+	'fetch-messages': [payload: Events['fetch-messages']]
+	'send-message': [payload: Events['send-message']]
+	'edit-message': [payload: Events['edit-message']]
+	'delete-message': [payload: Events['delete-message']]
+	'open-file': [payload: Events['open-file']]
+	'open-user-tag': [payload: Events['open-user-tag']]
+	'open-failed-message': [payload: Events['open-failed-message']]
+	'menu-action-handler': [payload: Events['menu-action-handler']]
+	'message-action-handler': [payload: Events['message-action-handler']]
+	'send-message-reaction': [payload: Events['send-message-reaction']]
+	'typing-message': [payload: Events['typing-message']]
+	'textarea-action-handler': [payload: Events['textarea-action-handler']]
 	'fetch-more-rooms': []
 	'add-room': []
-	'search-room': [payload: { value: string, roomId: string }]
-	'room-action-handler': [payload: { action: CustomAction, roomId: string }]
-	'message-selection-action-handler': [payload: unknown]
+	'search-room': [payload: Events['search-room']]
+	'room-action-handler': [payload: Events['room-action-handler']]
+	'message-selection-action-handler': [payload: Events['message-selection-action-handler']]
 }>()
 
 const castedProps = computed(() => ({

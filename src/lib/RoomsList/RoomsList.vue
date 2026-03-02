@@ -1,5 +1,12 @@
 <script setup lang="ts">
-import type { CustomAction, LinkOptions, Room, StringNumber, TextFormatting, TextMessages } from '@/types'
+import type {
+	CustomAction,
+	LinkOptions,
+	Room,
+	StringNumber,
+	TextFormatting,
+	TextMessages,
+} from '@/types'
 
 import { ref, useTemplateRef, watch } from 'vue'
 import Loader from '@/components/Loader/Loader.vue'
@@ -9,25 +16,28 @@ import filteredItems from '@/utils/filter-items'
 import RoomContent from './RoomContent/RoomContent.vue'
 import RoomsSearch from './RoomsSearch/RoomsSearch.vue'
 
-const props = withDefaults(defineProps<{
-	currentUserId: StringNumber
-	textMessages: TextMessages
-	showRoomsList: boolean
-	showSearch: boolean
-	showAddRoom: boolean
-	textFormatting: TextFormatting
-	linkOptions: LinkOptions
-	isMobile: boolean
-	rooms: Room[]
-	loadingRooms: boolean
-	roomsLoaded: boolean
-	room: Room | Record<string, never>
-	customSearchRoomEnabled: boolean
-	roomActions: CustomAction[]
-	scrollDistance: number
-}>(), {
-	customSearchRoomEnabled: false,
-})
+const props = withDefaults(
+	defineProps<{
+		currentUserId: StringNumber
+		textMessages: TextMessages
+		showRoomsList: boolean
+		showSearch: boolean
+		showAddRoom: boolean
+		textFormatting: TextFormatting
+		linkOptions: LinkOptions
+		isMobile: boolean
+		rooms: Room[]
+		loadingRooms: boolean
+		roomsLoaded: boolean
+		room: Room | Record<string, never>
+		customSearchRoomEnabled: boolean
+		roomActions: CustomAction[]
+		scrollDistance: number
+	}>(),
+	{
+		customSearchRoomEnabled: false,
+	},
+)
 
 const emit = defineEmits<{
 	'add-room': []
@@ -44,38 +54,53 @@ const filteredRooms = ref<Room[]>(props.rooms || [])
 const observer = ref<IntersectionObserver | null>(null)
 const showLoader = ref(true)
 const loadingMoreRooms = ref(false)
-const selectedRoomId = ref('')
+const selectedRoomId = ref<StringNumber>('')
 
-watch(() => props.rooms, (newVal, oldVal) => {
-	filteredRooms.value = newVal
-	if (newVal.length !== oldVal.length || props.roomsLoaded) {
-		loadingMoreRooms.value = false
-	}
-}, { deep: true })
+watch(
+	() => props.rooms,
+	(newVal, oldVal) => {
+		filteredRooms.value = newVal
+		if (newVal.length !== oldVal.length || props.roomsLoaded) {
+			loadingMoreRooms.value = false
+		}
+	},
+	{ deep: true },
+)
 
-watch(() => props.loadingRooms, (val) => {
-	if (!val) {
-		setTimeout(() => initIntersectionObserver())
-	}
-})
+watch(
+	() => props.loadingRooms,
+	(val) => {
+		if (!val) {
+			setTimeout(() => initIntersectionObserver())
+		}
+	},
+)
 
 watch(loadingMoreRooms, (val) => {
 	emit('loading-more-rooms', val)
 })
 
-watch(() => props.roomsLoaded, (val) => {
-	if (val) {
-		loadingMoreRooms.value = false
-		if (!props.loadingRooms) {
-			showLoader.value = false
+watch(
+	() => props.roomsLoaded,
+	(val) => {
+		if (val) {
+			loadingMoreRooms.value = false
+			if (!props.loadingRooms) {
+				showLoader.value = false
+			}
 		}
-	}
-}, { immediate: true })
+	},
+	{ immediate: true },
+)
 
-watch(() => props.room, (val) => {
-	if (val && !props.isMobile && 'roomId' in val)
-		selectedRoomId.value = val.roomId
-}, { immediate: true })
+watch(
+	() => props.room,
+	(val) => {
+		if (val && !props.isMobile && 'roomId' in val)
+			selectedRoomId.value = val.roomId
+	},
+	{ immediate: true },
+)
 
 function initIntersectionObserver() {
 	if (observer.value) {
@@ -181,7 +206,7 @@ function loadMoreRooms() {
 		<div v-if="!loadingRooms" id="rooms-list" class="vac-room-list">
 			<div
 				v-for="fRoom in filteredRooms"
-				:id="fRoom.roomId"
+				:id="String(fRoom.roomId)"
 				:key="fRoom.roomId"
 				class="vac-room-item"
 				:class="{ 'vac-room-selected': selectedRoomId === fRoom.roomId }"

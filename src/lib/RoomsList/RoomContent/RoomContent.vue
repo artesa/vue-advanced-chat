@@ -1,5 +1,12 @@
 <script setup lang="ts">
-import type { CustomAction, LinkOptions, Room, TextFormatting, TextMessages } from '@/types'
+import type {
+	CustomAction,
+	LinkOptions,
+	Room,
+	StringNumber,
+	TextFormatting,
+	TextMessages
+} from '@/types'
 
 import { computed, ref } from 'vue'
 import FormatMessage from '@/components/FormatMessage/FormatMessage.vue'
@@ -11,7 +18,7 @@ import vClickOutside from '@/utils/on-click-outside'
 import typingText from '@/utils/typing-text'
 
 const props = defineProps<{
-	currentUserId: string | number
+	currentUserId: StringNumber
 	room: Room
 	textFormatting: TextFormatting
 	linkOptions: LinkOptions
@@ -20,10 +27,12 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-	'room-action-handler': [payload: { action: CustomAction, roomId: string }]
+	'room-action-handler': [
+		payload: { action: CustomAction; roomId: StringNumber }
+	]
 }>()
 
-const roomMenuOpened = ref<string | null>(null)
+const roomMenuOpened = ref<StringNumber | null>(null)
 
 const typingUsers = computed(() => {
 	return typingText(props.room, String(props.currentUserId), props.textMessages)
@@ -31,8 +40,7 @@ const typingUsers = computed(() => {
 
 const getLastMessage = computed(() => {
 	const isTyping = typingUsers.value
-	if (isTyping)
-		return isTyping
+	if (isTyping) return isTyping
 
 	const content = props.room.lastMessage!.content
 
@@ -41,13 +49,12 @@ const getLastMessage = computed(() => {
 	}
 
 	const user = props.room.users.find(
-		user => user._id === props.room.lastMessage!.senderId,
+		user => user._id === props.room.lastMessage!.senderId
 	)
 
 	if (props.room.lastMessage!.username) {
 		return `${props.room.lastMessage!.username} - ${content}`
-	}
-	else if (!user || user._id === props.currentUserId) {
+	} else if (!user || user._id === props.currentUserId) {
 		return content
 	}
 
@@ -55,25 +62,23 @@ const getLastMessage = computed(() => {
 })
 
 const userStatus = computed(() => {
-	if (!props.room.users || props.room.users.length !== 2)
-		return
+	if (!props.room.users || props.room.users.length !== 2) return
 
 	const user = props.room.users.find(u => u._id !== props.currentUserId)
-	if (user && user.status)
-		return user.status.state
+	if (user && user.status) return user.status.state
 
 	return null
 })
 
 const isMessageCheckmarkVisible = computed(() => {
 	return (
-		!typingUsers.value
-		&& props.room.lastMessage
-		&& !props.room.lastMessage.deleted
-		&& props.room.lastMessage.senderId === props.currentUserId
-		&& (props.room.lastMessage.saved
-			|| props.room.lastMessage.distributed
-			|| props.room.lastMessage.seen)
+		!typingUsers.value &&
+		props.room.lastMessage &&
+		!props.room.lastMessage.deleted &&
+		props.room.lastMessage.senderId === props.currentUserId &&
+		(props.room.lastMessage.saved ||
+			props.room.lastMessage.distributed ||
+			props.room.lastMessage.seen)
 	)
 })
 
@@ -136,7 +141,7 @@ function closeRoomMenu(): void {
 					class="vac-text-last"
 					:class="{
 						'vac-message-new':
-							room.lastMessage && room.lastMessage.new && !typingUsers,
+							room.lastMessage && room.lastMessage.new && !typingUsers
 					}"
 				>
 					<span v-if="isMessageCheckmarkVisible">

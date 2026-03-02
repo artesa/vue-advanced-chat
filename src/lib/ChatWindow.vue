@@ -2,6 +2,7 @@
 import type {
 	AutoScroll,
 	CustomAction,
+	Events,
 	LinkOptions,
 	Message,
 	MessageAction,
@@ -17,10 +18,7 @@ import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import locales from '@/locales'
 import { cssThemeVars, defaultThemeStyles } from '@/themes'
 
-import {
-	partcipantsValidation,
-	roomsValidation,
-} from '@/utils/data-validation'
+import { partcipantsValidation, roomsValidation } from '@/utils/data-validation'
 import MediaPreview from './MediaPreview/MediaPreview.vue'
 import Room from './Room/Room.vue'
 
@@ -35,12 +33,12 @@ const props = withDefaults(
 		singleRoom?: boolean
 		roomsListOpened?: boolean
 		textMessages?: Record<string, StringNumber>
-		currentUserId?: string
+		currentUserId?: StringNumber
 		rooms?: RoomType[]
 		roomsOrder?: 'desc' | 'asc'
 		loadingRooms?: boolean
 		roomsLoaded?: boolean
-		roomId?: string | null
+		roomId?: StringNumber | null
 		loadFirstRoom?: boolean
 		messages?: Message[]
 		messagesLoaded?: boolean
@@ -124,7 +122,8 @@ const props = withDefaults(
 		showFiles: true,
 		showAudio: true,
 		audioBitRate: 128,
-		audioSampleRate: new (window.AudioContext || window.webkitAudioContext)().sampleRate,
+		audioSampleRate: new (window.AudioContext || window.webkitAudioContext)()
+			.sampleRate,
 		showEmojis: true,
 		showReactionEmojis: true,
 		showNewMessagesDivider: true,
@@ -152,25 +151,25 @@ const props = withDefaults(
 )
 
 const emit = defineEmits<{
-	'toggle-rooms-list': [payload: { opened: boolean }]
-	'room-info': [room: RoomType]
-	'fetch-messages': [payload: { room: RoomType | Record<string, never>, options?: { reset?: boolean } }]
-	'send-message': [payload: unknown]
-	'edit-message': [payload: unknown]
-	'delete-message': [payload: unknown]
-	'open-file': [payload: unknown]
-	'open-user-tag': [payload: unknown]
-	'open-failed-message': [payload: unknown]
-	'menu-action-handler': [payload: unknown]
-	'message-action-handler': [payload: unknown]
-	'send-message-reaction': [payload: unknown]
-	'typing-message': [payload: unknown]
-	'textarea-action-handler': [payload: unknown]
+	'toggle-rooms-list': [payload: Events['toggle-rooms-list']]
+	'room-info': [payload: Events['room-info']]
+	'fetch-messages': [payload: Events['fetch-messages']]
+	'send-message': [payload: Events['send-message']]
+	'edit-message': [payload: Events['edit-message']]
+	'delete-message': [payload: Events['delete-message']]
+	'open-file': [payload: Events['open-file']]
+	'open-user-tag': [payload: Events['open-user-tag']]
+	'open-failed-message': [payload: Events['open-failed-message']]
+	'menu-action-handler': [payload: Events['menu-action-handler']]
+	'message-action-handler': [payload: Events['message-action-handler']]
+	'send-message-reaction': [payload: Events['send-message-reaction']]
+	'typing-message': [payload: Events['typing-message']]
+	'textarea-action-handler': [payload: Events['textarea-action-handler']]
 	'fetch-more-rooms': []
 	'add-room': []
-	'search-room': [payload: { value: string, roomId: string }]
-	'room-action-handler': [payload: { action: CustomAction, roomId: string }]
-	'message-selection-action-handler': [payload: unknown]
+	'search-room': [payload: Events['search-room']]
+	'room-action-handler': [payload: Events['room-action-handler']]
+	'message-selection-action-handler': [payload: Events['message-selection-action-handler']]
 }>()
 
 // Data
@@ -187,7 +186,10 @@ const t = computed(() => ({
 }))
 
 const cssVars = computed(() => {
-	const defaultStyles = defaultThemeStyles[props.theme] as unknown as Record<string, Record<string, string>>
+	const defaultStyles = defaultThemeStyles[props.theme] as unknown as Record<
+		string,
+		Record<string, string>
+	>
 	const customStyles: Record<string, Record<string, string>> = {}
 
 	Object.keys(defaultStyles).forEach((key) => {
@@ -245,10 +247,13 @@ watch(
 	{ immediate: true, deep: true },
 )
 
-watch(() => props.loadingRooms, (val) => {
-	if (val)
-		room.value = {}
-})
+watch(
+	() => props.loadingRooms,
+	(val) => {
+		if (val)
+			room.value = {}
+	},
+)
 
 watch(
 	() => props.roomId,
@@ -269,7 +274,6 @@ watch(room, (val) => {
 		return
 
 	roomsValidation(val as any)
-
 	;(val as RoomType).users.forEach((user) => {
 		partcipantsValidation(user as any)
 	})
@@ -333,35 +337,48 @@ function searchRoom(val: string) {
 }
 
 function fetchMessages(options?: { reset?: boolean }) {
-	emit('fetch-messages', { room: room.value, options })
+	emit('fetch-messages', { room: room.value as RoomType, options })
 }
 
-function sendMessage(message: unknown) {
-	emit('send-message', { ...(message as Record<string, unknown>), roomId: (room.value as RoomType).roomId })
+function sendMessage(ev: unknown) {
+	const message = ev as Events['send-message']
+	emit('send-message', {
+		...message,
+		roomId: (room.value as RoomType).roomId,
+	})
 }
 
-function editMessage(message: unknown) {
-	emit('edit-message', { ...(message as Record<string, unknown>), roomId: (room.value as RoomType).roomId })
+function editMessage(ev: unknown) {
+	const message = ev as Events['edit-message']
+	emit('edit-message', {
+		...message,
+		roomId: (room.value as RoomType).roomId,
+	})
 }
 
 function deleteMessage(message: unknown) {
 	emit('delete-message', { message, roomId: (room.value as RoomType).roomId })
 }
 
-function openFile({ message, file }: { message: Message, file: any }) {
+function openFile(ev: unknown) {
+	const { message, file } = ev as { message: Message, file: MessageFile }
 	if (props.handleCustomOpenFiles) {
-		emit('open-file', { message, file, defaultHandle: () => {
-			_openFile({ message, file })
-		} })
+		emit('open-file', {
+			message,
+			file,
+			defaultHandle: () => {
+				_openFile({ message, file })
+			},
+		})
 	}
 	else {
 		_openFile({ message, file })
 	}
 }
 
-function _openFile({ message, file }: { message: Message, file: any }) {
-	if (props.mediaPreviewEnabled && file.action === 'preview') {
-		previewFile.value = file.file!
+function _openFile({ message, file }: { message: Message, file: MessageFile }) {
+	if (props.mediaPreviewEnabled && (file as any).action === 'preview') {
+		previewFile.value = (file as any).file!
 		showMediaPreview.value = true
 	}
 	else {
@@ -390,7 +407,7 @@ function menuActionHandler(ev: unknown) {
 }
 
 function roomActionHandler(ev: unknown) {
-	const { action, roomId } = ev as { action: CustomAction, roomId: string }
+	const { action, roomId } = ev as Events['room-action-handler']
 	emit('room-action-handler', {
 		action,
 		roomId,
@@ -398,22 +415,27 @@ function roomActionHandler(ev: unknown) {
 }
 
 function messageActionHandler(ev: unknown) {
+	const { action, message } = ev as { action: MessageAction, message: Message }
 	emit('message-action-handler', {
-		...(ev as Record<string, unknown>),
+		action,
+		message,
 		roomId: (room.value as RoomType).roomId,
 	})
 }
 
 function messageSelectionActionHandler(ev: unknown) {
+	const { action, messages } = ev as { action: CustomAction, messages: Message[] }
 	emit('message-selection-action-handler', {
-		...(ev as Record<string, unknown>),
+		action,
+		messages,
 		roomId: (room.value as RoomType).roomId,
 	})
 }
 
-function sendMessageReaction(messageReaction: unknown) {
+function sendMessageReaction(ev: unknown) {
+	const messageReaction = ev as { messageId: StringNumber, reaction: string, remove: boolean }
 	emit('send-message-reaction', {
-		...(messageReaction as Record<string, unknown>),
+		...messageReaction,
 		roomId: (room.value as RoomType).roomId,
 	})
 }
