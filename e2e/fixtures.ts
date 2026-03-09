@@ -189,6 +189,25 @@ export const imageMessage: Message = {
 	],
 }
 
+export const uploadingImageMessage: Message = {
+	_id: 'msg-upload',
+	senderId: 'user-1',
+	content: 'Uploading a photo...',
+	username: 'Luke',
+	date: '28 Feb 2026',
+	timestamp: '10:50',
+	saved: false,
+	files: [
+		{
+			name: 'photo.png',
+			type: 'image/png',
+			extension: 'png',
+			url: '/sample.png',
+			progress: 65,
+		},
+	],
+}
+
 export const fileMessage: Message = {
 	_id: 'msg-file',
 	senderId: 'user-2',

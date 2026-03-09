@@ -9,6 +9,7 @@ import {
 	imageMessage,
 	messages,
 	rooms,
+	uploadingImageMessage,
 } from './fixtures'
 
 function locateBySelector(selector: string) {
@@ -191,6 +192,24 @@ describe('visual screenshot tests', () => {
 		await expect.element(page.getByText('Hey Leia, how are you?')).toBeVisible()
 		const msgEl = locateBySelector('#msg-audio')
 		await expect.element(msgEl).toMatchScreenshot('message-with-audio')
+	})
+
+	it('upload progress bar', async () => {
+		const messagesWithUpload = [...messages, uploadingImageMessage]
+
+		renderWithMessages({
+			currentUserId,
+			rooms,
+			messages: messagesWithUpload,
+			roomsLoaded: true,
+			roomId: 'room-1',
+			singleRoom: true,
+			height: '500px',
+		})
+
+		await expect.element(page.getByText('Uploading a photo...')).toBeVisible()
+		const msgEl = locateBySelector('#msg-upload')
+		await expect.element(msgEl).toMatchScreenshot('upload-progress-bar')
 	})
 
 	it('rooms list', async () => {
