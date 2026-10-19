@@ -21,3 +21,6 @@ yarn-error.log*
 *.sln
 *.sw?
 demo/.env
+
+# vitest browser test output
+.vitest-attachments

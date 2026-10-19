@@ -22,6 +22,8 @@ export default defineConfig({
 	test: {
 		browser: {
 			enabled: true,
+			// a visible browser window changes the size of the screenshots
+			headless: true,
 			provider: playwright(),
 			instances: [{ browser: 'chromium' }],
 		},
