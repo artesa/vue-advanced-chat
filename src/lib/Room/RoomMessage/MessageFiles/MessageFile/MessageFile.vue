@@ -22,14 +22,12 @@ const emit = defineEmits<{
 }>()
 
 const imageResponsive = ref({ maxHeight: 0, loaderTop: 0 })
+// only while the browser loads it: an upload shows its progress, and a blob: url may be a
+// finished file the app keeps on the device
 const imageLoading = ref(false)
 const imageHover = ref(false)
 
 const imageRef = useTemplateRef('imageRef')
-
-const isImageLoading = computed(() => {
-	return props.file.url.indexOf('blob:http') !== -1 || imageLoading.value
-})
 
 const isImage = computed(() => {
 	return isImageFile(props.file)
@@ -90,7 +88,7 @@ function openFile(event: Event, action: string) {
 			/>
 			<loader
 				v-else
-				:show="isImageLoading"
+				:show="imageLoading"
 				type="message-file"
 				:message-id="message._id"
 			>
@@ -102,18 +100,18 @@ function openFile(event: Event, action: string) {
 				class="vac-message-image"
 				:class="{
 					'vac-blur-loading':
-						isImageLoading && message.senderId === currentUserId,
+						imageLoading && message.senderId === currentUserId,
 				}"
 				:style="{
 					'background-image': `url('${
-						isImageLoading ? file.preview || file.url : file.url
+						imageLoading ? file.preview || file.url : file.url
 					}')`,
 					'max-height': `${imageResponsive.maxHeight}px`,
 				}"
 			>
 				<transition name="vac-fade-image">
 					<div
-						v-if="!messageSelectionEnabled && imageHover && !isImageLoading"
+						v-if="!messageSelectionEnabled && imageHover && !imageLoading"
 						class="vac-image-buttons"
 					>
 						<div
